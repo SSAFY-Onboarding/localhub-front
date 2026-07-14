@@ -12,6 +12,8 @@ const loading = ref(true)
 const error = ref('')
 const deleteOpen = ref(false)
 const deleting = ref(false)
+const liking = ref(false)
+const likeError = ref('')
 const passwordError = ref('')
 const passwordModal = ref<InstanceType<typeof PasswordModal> | null>(null)
 const id = computed(() => Number(route.params.id))
@@ -58,6 +60,19 @@ async function remove(password: string) {
     deleting.value = false
   }
 }
+async function likePost() {
+  if (!post.value || liking.value) return
+  liking.value = true
+  likeError.value = ''
+  try {
+    const result = await postService.likePost(post.value.id)
+    post.value.like_count = result.like_count
+  } catch (e) {
+    likeError.value = e instanceof ApiError ? e.message : '추천하지 못했습니다.'
+  } finally {
+    liking.value = false
+  }
+}
 function closeDeleteModal() {
   deleteOpen.value = false
   passwordError.value = ''
@@ -91,6 +106,14 @@ onMounted(load)
         </p>
       </header>
       <div class="post-content">{{ post.content }}</div>
+      <div class="post-recommend">
+        <button class="like-button" type="button" :disabled="liking" @click="likePost">
+          <span aria-hidden="true">♥</span>
+          {{ liking ? '추천 중...' : `추천 ${post.like_count}` }}
+        </button>
+        <p>로그인 없이 여러 번 추천할 수 있습니다.</p>
+        <p v-if="likeError" class="field-error" role="alert">{{ likeError }}</p>
+      </div>
       <footer>
         <button class="button secondary" @click="router.push(listLocation)">목록</button>
         <div>

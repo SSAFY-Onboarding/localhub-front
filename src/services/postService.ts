@@ -1,4 +1,10 @@
-import type { PostCreateInput, PostDetail, PostListResponse, PostUpdateInput } from '@/types/posts'
+import type {
+  LikeResponse,
+  PostCreateInput,
+  PostDetail,
+  PostListResponse,
+  PostUpdateInput,
+} from '@/types/posts'
 import { ApiError } from '@/types/posts'
 
 interface StoredPost extends PostDetail {
@@ -15,6 +21,7 @@ const seedPosts: StoredPost[] = [
     content:
       '서울숲에서 성수동 골목까지 천천히 걷기 좋은 코스입니다. 오후에는 사람이 많아 오전 방문을 추천해요.',
     password: '1234',
+    like_count: 8,
     created_at: '2026-07-14T01:20:00Z',
     updated_at: '2026-07-14T01:20:00Z',
   },
@@ -24,6 +31,7 @@ const seedPosts: StoredPost[] = [
     content:
       '여의도나 반포 한강공원에서 열리는 야외 행사를 찾고 있습니다. 가족과 함께 갈 만한 곳이면 좋겠습니다.',
     password: '1234',
+    like_count: 5,
     created_at: '2026-07-13T08:10:00Z',
     updated_at: '2026-07-13T08:10:00Z',
   },
@@ -33,6 +41,7 @@ const seedPosts: StoredPost[] = [
     content:
       '평일 오전에는 비교적 여유롭게 둘러볼 수 있었습니다. 대중교통으로 방문하는 편이 편리합니다.',
     password: '1234',
+    like_count: 12,
     created_at: '2026-07-12T03:40:00Z',
     updated_at: '2026-07-12T03:40:00Z',
   },
@@ -42,6 +51,7 @@ const seedPosts: StoredPost[] = [
     content:
       '국립중앙박물관은 실내 동선이 넓고 상설 전시도 풍부해서 비 오는 날 방문하기 좋았습니다.',
     password: '1234',
+    like_count: 4,
     created_at: '2026-07-11T05:30:00Z',
     updated_at: '2026-07-11T05:30:00Z',
   },
@@ -50,6 +60,7 @@ const seedPosts: StoredPost[] = [
     title: '경복궁 주변 반나절 코스 공유합니다',
     content: '경복궁에서 시작해 서촌과 청계천을 잇는 반나절 코스입니다. 편한 신발을 추천합니다.',
     password: '1234',
+    like_count: 7,
     created_at: '2026-07-10T02:00:00Z',
     updated_at: '2026-07-10T02:00:00Z',
   },
@@ -59,6 +70,7 @@ const seedPosts: StoredPost[] = [
     content:
       '서울의 장소와 행사, 여행 경험을 자유롭게 나눠 주세요. 작성 시 설정한 비밀번호는 수정과 삭제에 필요합니다.',
     password: '1234',
+    like_count: 3,
     created_at: '2026-07-09T00:00:00Z',
     updated_at: '2026-07-09T00:00:00Z',
   },
@@ -71,7 +83,10 @@ function readPosts(): StoredPost[] {
     return structuredClone(seedPosts)
   }
   try {
-    return JSON.parse(saved) as StoredPost[]
+    return (JSON.parse(saved) as StoredPost[]).map((post) => ({
+      ...post,
+      like_count: post.like_count ?? 0,
+    }))
   } catch {
     return structuredClone(seedPosts)
   }
@@ -110,7 +125,7 @@ export const postService = {
     return {
       items: posts
         .slice((page - 1) * size, page * size)
-        .map(({ id, title, created_at }) => ({ id, title, created_at })),
+        .map(({ id, title, like_count, created_at }) => ({ id, title, like_count, created_at })),
       page,
       size,
       total,
@@ -135,6 +150,7 @@ export const postService = {
       id: Math.max(0, ...posts.map((item) => item.id)) + 1,
       ...normalized,
       password: input.password,
+      like_count: 0,
       created_at: now,
       updated_at: now,
     }
@@ -167,5 +183,15 @@ export const postService = {
     if (target.password !== password)
       throw new ApiError('INVALID_PASSWORD', '비밀번호가 일치하지 않습니다.', 403)
     writePosts(posts.filter((item) => item.id !== id))
+  },
+
+  async likePost(id: number): Promise<LikeResponse> {
+    await delay()
+    const posts = readPosts()
+    const target = posts.find((item) => item.id === id)
+    if (!target) throw new ApiError('POST_NOT_FOUND', '해당 게시글을 찾을 수 없습니다.', 404)
+    target.like_count += 1
+    writePosts(posts)
+    return { id: target.id, like_count: target.like_count }
   },
 }

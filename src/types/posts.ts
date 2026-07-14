@@ -1,6 +1,7 @@
 export interface PostSummary {
   id: number
   title: string
+  like_count: number
   created_at: string
 }
 
@@ -24,6 +25,11 @@ export interface PostCreateInput {
 }
 
 export type PostUpdateInput = PostCreateInput
+
+export interface LikeResponse {
+  id: number
+  like_count: number
+}
 
 export interface FieldError {
   field: string
