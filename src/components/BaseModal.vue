@@ -22,8 +22,23 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="modal-backdrop" role="presentation" @mousedown.self="!busy && emit('close')">
-    <section ref="panel" class="modal-panel" role="dialog" aria-modal="true" :aria-label="title" tabindex="-1">
-      <button class="modal-close" type="button" :disabled="busy" aria-label="닫기" @click="emit('close')">×</button>
+    <section
+      ref="panel"
+      class="modal-panel"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title"
+      tabindex="-1"
+    >
+      <button
+        class="modal-close"
+        type="button"
+        :disabled="busy"
+        aria-label="닫기"
+        @click="emit('close')"
+      >
+        ×
+      </button>
       <slot />
     </section>
   </div>

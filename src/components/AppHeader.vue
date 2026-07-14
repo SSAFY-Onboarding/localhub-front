@@ -13,13 +13,24 @@ const route = useRoute()
         <span class="brand-mark" aria-hidden="true">L</span>
         <span>LocalHub <small>SEOUL</small></span>
       </RouterLink>
-      <button class="menu-button" type="button" :aria-expanded="open" aria-label="메뉴 열기" @click="open = !open">
+      <button
+        class="menu-button"
+        type="button"
+        :aria-expanded="open"
+        aria-label="메뉴 열기"
+        @click="open = !open"
+      >
         <span></span><span></span><span></span>
       </button>
       <nav :class="['main-nav', { open }]" aria-label="주 메뉴">
         <RouterLink to="/" @click="open = false">홈</RouterLink>
         <span class="nav-disabled" title="지도 화면 준비 중">지역 지도</span>
-        <RouterLink :class="{ 'router-link-active': route.path.startsWith('/posts') }" to="/posts" @click="open = false">커뮤니티</RouterLink>
+        <RouterLink
+          :class="{ 'router-link-active': route.path.startsWith('/posts') }"
+          to="/posts"
+          @click="open = false"
+          >커뮤니티</RouterLink
+        >
       </nav>
     </div>
   </header>
