@@ -452,7 +452,7 @@
 .board-head,
 .board-row {
   display: grid;
-  grid-template-columns: 90px 1fr 90px 120px;
+  grid-template-columns: 70px 1fr 70px 70px 110px;
   align-items: center;
   min-height: 61px;
   border-bottom: 1px solid #e8e9e5;
@@ -477,6 +477,7 @@
 }
 .board-row time,
 .post-number,
+.post-views,
 .post-likes {
   text-align: center;
   color: #7b837f;
@@ -846,7 +847,7 @@
     display: none;
   }
   .board-row {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     min-height: 75px;
     padding: 13px 5px;
   }

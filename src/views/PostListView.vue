@@ -65,7 +65,9 @@ watch(page, load)
         <RouterLink class="button primary" to="/posts/new">글쓰기</RouterLink>
       </div>
       <template v-else>
-        <div class="board-head"><span>번호</span><span>제목</span><span>추천</span><span>작성일</span></div>
+        <div class="board-head">
+          <span>번호</span><span>제목</span><span>조회</span><span>추천</span><span>작성일</span>
+        </div>
         <RouterLink
           v-for="post in data.items"
           :key="post.id"
@@ -78,6 +80,7 @@ watch(page, load)
         >
           <span class="post-number">{{ post.id }}</span
           ><strong>{{ post.title }}</strong
+          ><span class="post-views" aria-label="조회수">{{ post.view_count }}</span
           ><span class="post-likes" aria-label="추천 수">♥ {{ post.like_count }}</span
           ><time :datetime="post.created_at">{{ formatDate(post.created_at) }}</time>
         </RouterLink>

@@ -201,14 +201,38 @@ DELETE /api/posts/{id}
 ```
 POST /api/posts/{id}/like
 ```
-- MVP: `like_count` +1
-- (선택) 1인 1추천: 클라이언트 키를 헤더/바디로 받아 `post_likes` 중복 방지
+
+- 요청 Body와 인증 정보는 사용하지 않는다.
+- 요청할 때마다 별도 검증 없이 `like_count`를 1 증가시킨다.
+- 동일 사용자의 반복 추천과 연속 추천을 허용한다.
+- 프런트는 요청 처리 중에만 버튼을 비활성화하며, 완료 후 다시 추천할 수 있다.
+
+```http
+POST /api/posts/42/like
+Content-Length: 0
+```
 
 **200 OK**
 ```json
 { "id": 42, "like_count": 16 }
 ```
-**404** `POST_NOT_FOUND`
+
+**오류**
+
+- **404** `POST_NOT_FOUND`
+- **422** `VALIDATION_ERROR`: 게시글 ID가 양의 정수가 아님
+
+동시 요청에서도 증가 값이 유실되지 않도록 DB에서 원자적으로 증가시킨다.
+
+```sql
+UPDATE posts
+SET like_count = like_count + 1
+WHERE id = :post_id;
+```
+
+`posts.like_count`의 기본값은 `0`이며 음수가 될 수 없다. 목록 응답 `PostSummary`와 상세 응답 `PostDetail`은 항상 `like_count`를 포함한다.
+
+> 인증 및 사용자 식별이 없는 교육용 MVP 기능이다. 중복 추천을 허용하므로 추천 수를 사용자별 선호도나 신뢰 가능한 통계로 해석하지 않는다.
 
 ---
 

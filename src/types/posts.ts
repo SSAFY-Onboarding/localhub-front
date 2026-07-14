@@ -2,12 +2,15 @@ export interface PostSummary {
   id: number
   title: string
   like_count: number
+  view_count: number
   created_at: string
 }
 
 export interface PostDetail extends PostSummary {
   content: string
-  updated_at: string
+  like_count: number
+  view_count: number
+  updated_at: string | null
 }
 
 export interface PostListResponse {

@@ -102,7 +102,8 @@ onMounted(load)
         <h1>{{ post.title }}</h1>
         <p>
           {{ formatDate(post.created_at)
-          }}<template v-if="post.updated_at !== post.created_at"> · 수정됨</template>
+          }}<template v-if="post.updated_at && post.updated_at !== post.created_at"> · 수정됨</template>
+          · 조회 {{ post.view_count.toLocaleString('ko-KR') }}
         </p>
       </header>
       <div class="post-content">{{ post.content }}</div>
