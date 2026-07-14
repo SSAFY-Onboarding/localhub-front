@@ -58,6 +58,10 @@ async function remove(password: string) {
     deleting.value = false
   }
 }
+function closeDeleteModal() {
+  deleteOpen.value = false
+  passwordError.value = ''
+}
 onMounted(load)
 </script>
 
@@ -111,10 +115,7 @@ onMounted(load)
       mode="delete"
       :busy="deleting"
       :error="passwordError"
-      @close="
-        deleteOpen = false
-        passwordError = ''
-      "
+      @close="closeDeleteModal"
       @confirm="remove"
     />
   </section>

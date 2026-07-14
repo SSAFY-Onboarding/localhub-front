@@ -16,6 +16,10 @@ function prepare(value: { title: string; content: string }) {
   draft.value = value
   modalOpen.value = true
 }
+function closeModal() {
+  modalOpen.value = false
+  passwordError.value = ''
+}
 async function create(password: string) {
   busy.value = true
   passwordError.value = ''
@@ -50,10 +54,7 @@ async function create(password: string) {
       mode="create"
       :busy="busy"
       :error="passwordError"
-      @close="
-        modalOpen = false
-        passwordError = ''
-      "
+      @close="closeModal"
       @confirm="create"
     />
   </section>
