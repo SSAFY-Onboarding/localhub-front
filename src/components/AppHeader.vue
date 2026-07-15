@@ -11,7 +11,7 @@ const route = useRoute()
     <div class="container header-inner">
       <RouterLink class="brand" to="/" @click="open = false">
         <span class="brand-mark" aria-hidden="true">L</span>
-        <span>LocalHub <small>SEOUL</small></span>
+        <span>Seoulmate <small>LOCAL GUIDE</small></span>
       </RouterLink>
       <button
         class="menu-button"
