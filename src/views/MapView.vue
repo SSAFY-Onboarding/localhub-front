@@ -3,9 +3,11 @@ import 'leaflet/dist/leaflet.css'
 import L, { type Map as LeafletMap, type Marker, type Popup } from 'leaflet'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PlaceCategoryIcon from '@/components/PlaceCategoryIcon.vue'
 import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
 import { placeService } from '@/services/placeService'
 import type { MarkerPlace } from '@/types/places'
+import { categoryColor, categoryColors, categoryMarkerIconSvg } from '@/utils/categoryVisuals'
 import { fallbackPlaceThumbnail } from '@/utils/placeThumbnail'
 
 type SheetState = 'peek' | 'half' | 'full'
@@ -47,24 +49,16 @@ const pagedPlaces = computed(() =>
   filteredPlaces.value.slice((listPage.value - 1) * pageSize, listPage.value * pageSize),
 )
 
-const categoryColors: Record<string, string> = {
-  관광지: '#c65f42',
-  문화시설: '#765c9f',
-  축제공연행사: '#d98b2b',
-  여행코스: '#287d65',
-  레포츠: '#3377a8',
-  숙박: '#805843',
-  쇼핑: '#b04f77',
-}
-
 function markerIcon(category: string, active = false) {
-  const color = categoryColors[category] ?? '#114b3b'
+  const color = categoryColor(category)
   const zoom = map?.getZoom() ?? 12
   const baseSize = zoom >= 17 ? 26 : zoom >= 15 ? 22 : zoom >= 13 ? 18 : 14
   const size = active ? baseSize + 8 : baseSize
+  const showCategoryIcon = zoom >= 15
+  const icon = showCategoryIcon ? categoryMarkerIconSvg(category) : ''
   return L.divIcon({
     className: 'map-marker-shell',
-    html: `<span class="map-marker${active ? ' active' : ''}" style="--marker-color:${color};--marker-size:${size}px"></span>`,
+    html: `<span class="map-marker${active ? ' active' : ''}${showCategoryIcon ? ' has-icon' : ''}" style="--marker-color:${color};--marker-size:${size}px">${icon}</span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   })
@@ -401,6 +395,13 @@ onBeforeUnmount(() => {
               :aria-pressed="allCategoriesSelected"
               @click="selectAllCategories"
             >
+              <span class="map-category-all-icon" aria-hidden="true">
+                <i
+                  v-for="category in categories"
+                  :key="category"
+                  :style="{ backgroundColor: categoryColor(category) }"
+                ></i>
+              </span>
               전체</button
             ><button
               v-for="category in categories"
@@ -408,8 +409,16 @@ onBeforeUnmount(() => {
               :class="{ active: selectedCategories.includes(category) }"
               type="button"
               :aria-pressed="selectedCategories.includes(category)"
+              :title="`${category} 마커 표시 또는 숨기기`"
               @click="toggleCategory(category)"
             >
+              <span
+                class="map-category-icon"
+                :style="{ backgroundColor: categoryColor(category) }"
+                aria-hidden="true"
+              >
+                <PlaceCategoryIcon :category="category" />
+              </span>
               {{ category }}
             </button>
           </div>
@@ -453,8 +462,10 @@ onBeforeUnmount(() => {
                   />
                   <span
                     class="map-list-marker"
-                    :style="{ background: categoryColors[place.category] ?? '#114b3b' }"
-                  ></span
+                    :style="{ backgroundColor: categoryColors[place.category] ?? '#114b3b' }"
+                    aria-hidden="true"
+                  >
+                    <PlaceCategoryIcon :category="place.category" /></span
                   ><span
                     ><small>{{ place.category }}</small
                     ><strong>{{ place.name }}</strong
