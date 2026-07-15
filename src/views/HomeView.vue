@@ -59,7 +59,7 @@ import { RouterLink } from 'vue-router'
           <div class="feature-icon chat">✦</div>
           <h3>지역 정보 챗봇</h3>
           <p>궁금한 서울 정보를 자연어로 질문하면 공공데이터를 바탕으로 알려드려요.</p>
-          <span class="text-link muted">준비 중</span>
+          <RouterLink class="text-link" to="/chatbot">AI 여행 추천 시작하기 →</RouterLink>
         </article>
       </div>
     </section>
