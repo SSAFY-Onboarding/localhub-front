@@ -1335,6 +1335,26 @@
     0 0 0 3px rgba(17, 75, 59, 0.28),
     0 4px 13px rgba(10, 37, 29, 0.58);
 }
+.map-cluster-shell {
+  background: transparent;
+  border: 0;
+}
+.map-cluster {
+  display: grid;
+  box-sizing: border-box;
+  place-items: center;
+  width: var(--cluster-size);
+  height: var(--cluster-size);
+  border: 4px solid white;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow:
+    0 0 0 1px rgba(15, 45, 36, 0.35),
+    0 3px 9px rgba(0, 0, 0, 0.48);
+}
 .localhub-map-popup .leaflet-popup-content-wrapper {
   border-radius: 3px;
   background: var(--paper);
@@ -2286,6 +2306,22 @@
   position: absolute;
   inset: 0;
 }
+.map-current-area {
+  position: absolute;
+  z-index: 500;
+  top: 16px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: 0 5px 18px rgba(15, 48, 38, 0.18);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
 .map-research-button {
   position: absolute;
   z-index: 500;
@@ -2412,6 +2448,10 @@
   }
   .map-research-button {
     top: 12px;
+  }
+  .map-current-area {
+    top: 12px;
+    left: 12px;
   }
   .map-zoom-notice {
     top: 62px;
