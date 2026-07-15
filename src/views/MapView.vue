@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import 'leaflet/dist/leaflet.css'
-import L, { type Map as LeafletMap, type Marker, type Popup } from 'leaflet'
+import 'leaflet.markercluster/dist/MarkerCluster.css'
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
+import L, { type Map as LeafletMap, type Marker, type MarkerCluster, type MarkerClusterGroup, type Popup } from 'leaflet'
+import 'leaflet.markercluster'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlaceCategoryIcon from '@/components/PlaceCategoryIcon.vue'
@@ -31,11 +34,15 @@ const error = ref('')
 const areaTotal = ref(0)
 const truncated = ref(false)
 const boundsDirty = ref(false)
+const currentAreaLabel = ref('')
 let map: LeafletMap | null = null
 let placePopup: Popup | null = null
+let clusterGroup: MarkerClusterGroup | null = null
 let markers: PlaceMarker[] = []
 let requestController: AbortController | null = null
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
+let areaLabelTimer: ReturnType<typeof setTimeout> | null = null
+let areaLabelController: AbortController | null = null
 let zooming = false
 let categoriesReady = false
 
@@ -59,6 +66,17 @@ function markerIcon(category: string, active = false) {
   return L.divIcon({
     className: 'map-marker-shell',
     html: `<span class="map-marker${active ? ' active' : ''}${showCategoryIcon ? ' has-icon' : ''}" style="--marker-color:${color};--marker-size:${size}px">${icon}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  })
+}
+
+function clusterIcon(cluster: MarkerCluster) {
+  const count = cluster.getChildCount()
+  const size = count >= 100 ? 52 : count >= 20 ? 44 : 36
+  return L.divIcon({
+    className: 'map-cluster-shell',
+    html: `<span class="map-cluster" style="--cluster-size:${size}px">${count}</span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   })
@@ -108,10 +126,13 @@ function openPlacePopup(place: MarkerPlace) {
 async function selectPlace(place: MarkerPlace, moveMap = true) {
   selectedPlace.value = place
   updateMarkerSelection()
-  if (moveMap && map && place.latitude !== null && place.longitude !== null) {
-    map.panTo([place.latitude, place.longitude])
+  const marker = markers.find((item) => item.placeId === place.id)
+  if (moveMap && map && clusterGroup && marker && place.latitude !== null && place.longitude !== null) {
+    // zoomToShowLayer pans/zooms until the marker is out of any cluster, then opens its popup
+    clusterGroup.zoomToShowLayer(marker, () => openPlacePopup(place))
+  } else {
+    openPlacePopup(place)
   }
-  openPlacePopup(place)
   void router.replace({ query: { place: place.id } })
   if (window.matchMedia('(max-width: 760px)').matches) sheetState.value = 'half'
   await nextTick()
@@ -119,9 +140,9 @@ async function selectPlace(place: MarkerPlace, moveMap = true) {
 }
 
 function renderMarkers(items: MarkerPlace[]) {
-  markers.forEach((marker) => marker.remove())
+  clusterGroup?.clearLayers()
   markers = []
-  if (!map) return
+  if (!map || !clusterGroup) return
   items.forEach((place) => {
     if (place.latitude === null || place.longitude === null) return
     const marker = L.marker([place.latitude, place.longitude], {
@@ -132,9 +153,9 @@ function renderMarkers(items: MarkerPlace[]) {
     marker.placeCategory = place.category
     marker.placeId = place.id
     marker.on('click', () => void selectPlace(place, false))
-    marker.addTo(map!)
     markers.push(marker)
   })
+  clusterGroup.addLayers(markers)
 }
 
 function applyDisplayedPlaces() {
@@ -213,6 +234,44 @@ function scheduleFetch() {
   fetchTimer = setTimeout(() => void fetchPlaces(), 250)
 }
 
+async function updateAreaLabel() {
+  if (!map) return
+  const center = map.getCenter()
+  areaLabelController?.abort()
+  const controller = new AbortController()
+  areaLabelController = controller
+  try {
+    const params = new URLSearchParams({
+      format: 'jsonv2',
+      lat: String(center.lat),
+      lon: String(center.lng),
+      zoom: '14',
+      'accept-language': 'ko',
+    })
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    })
+    if (!response.ok) return
+    const data = await response.json()
+    const address = data.address ?? {}
+    const region: string = address.state || address.city || ''
+    const district: string =
+      address.borough || address.city_district || address.county || address.district || ''
+    const label = [region, district].filter(Boolean).join(' ')
+    if (label) currentAreaLabel.value = label
+  } catch (cause) {
+    if (!(cause instanceof DOMException && cause.name === 'AbortError')) {
+      // 위치 라벨은 보조 정보라 실패해도 이전 값을 그대로 둔다
+    }
+  }
+}
+
+function scheduleAreaLabelUpdate() {
+  if (areaLabelTimer) clearTimeout(areaLabelTimer)
+  areaLabelTimer = setTimeout(() => void updateAreaLabel(), 600)
+}
+
 async function applySearch() {
   searchKeyword.value = searchInput.value.trim()
   listPage.value = 1
@@ -285,6 +344,12 @@ onMounted(async () => {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
   }).addTo(map)
+  clusterGroup = L.markerClusterGroup({
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    iconCreateFunction: clusterIcon,
+  }).addTo(map)
   map.on('zoomstart', () => {
     zooming = true
   })
@@ -300,7 +365,9 @@ onMounted(async () => {
         markerIcon(marker.placeCategory ?? '', marker.placeId === selectedPlace.value?.id),
       ),
     )
+    scheduleAreaLabelUpdate()
   })
+  void updateAreaLabel()
   try {
     categories.value = await placeService.getCategories()
     selectedCategories.value.push(...categories.value)
@@ -323,10 +390,13 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   requestController?.abort()
+  areaLabelController?.abort()
   if (fetchTimer) clearTimeout(fetchTimer)
+  if (areaLabelTimer) clearTimeout(areaLabelTimer)
   map?.remove()
   map = null
   placePopup = null
+  clusterGroup = null
 })
 </script>
 
@@ -491,6 +561,9 @@ onBeforeUnmount(() => {
       </aside>
       <div class="map-canvas-wrap">
         <div ref="mapElement" class="local-map" aria-label="서울 장소 지도"></div>
+        <p v-if="currentAreaLabel" class="map-current-area">
+          <span aria-hidden="true">📍</span>{{ currentAreaLabel }}
+        </p>
         <button v-if="boundsDirty" class="map-research-button" type="button" @click="fetchPlaces">
           이 지역에서 다시 검색
         </button>
