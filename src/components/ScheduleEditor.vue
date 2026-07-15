@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import PlacePickerModal from '@/components/PlacePickerModal.vue'
+import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
 import type { Place } from '@/types/places'
 import type { ScheduleItem } from '@/types/posts'
 
@@ -44,6 +45,7 @@ function addPlace(place: Place) {
       type: place.category,
       lat: place.latitude,
       lng: place.longitude,
+      image_url: place.image_url ?? null,
       time: null,
       memo: null,
     },
@@ -106,6 +108,12 @@ function move(target: ScheduleItem, offset: number) {
           class="schedule-item"
         >
           <span class="schedule-order">{{ index + 1 }}</span>
+          <PlaceThumbnail
+            :src="item.image_url"
+            :name="item.name"
+            :category="item.type"
+            size="schedule"
+          />
           <div class="schedule-item-main">
             <div class="schedule-place-title">
               <strong>{{ item.name }}</strong

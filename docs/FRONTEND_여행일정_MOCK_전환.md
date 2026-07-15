@@ -47,6 +47,7 @@
   "type": "관광지",
   "lat": 37.5796,
   "lng": 126.977,
+  "image_url": "https://example.com/place.jpg",
   "time": "10:00",
   "memo": "수문장 교대식 보기"
 }
@@ -55,6 +56,7 @@
 - 일정이 없으면 `schedule: []`를 전송한다.
 - `day`와 `order`는 1부터 시작하며 UI에서 삭제·순서 변경 시 다시 연속 번호로 정규화한다.
 - `name`, `type`, 좌표는 선택 당시 장소 정보를 스냅샷으로 저장한다.
+- `image_url`도 선택 당시 값을 nullable 스냅샷으로 저장한다. 기존 일정에 필드가 없거나 이미지 로딩이 실패하면 카테고리별 로컬 SVG를 표시한다.
 - 제한은 최대 7일, 일자별 10개, 전체 30개, 메모 200자다.
 - 같은 장소의 중복 등록은 허용한다.
 
@@ -62,6 +64,7 @@
 
 - 게시글 상세 응답에서 일정이 없을 때는 `schedule: []`를 사용한다. 기존 데이터가 `null`이어도 프런트는 안전하게 처리한다.
 - 장소 API는 `latitude`/`longitude`, ScheduleItem은 `lat`/`lng`를 사용한다. 프런트는 장소를 일정에 추가할 때 변환한다.
+- 지도 `MarkerPlace`와 게시글 `ScheduleItem`은 `image_url: string | null`을 반환한다. 백엔드 반영 전에도 프런트는 fallback SVG로 동작한다.
 - 게시글 목록에는 일정 전체를 싣지 않는다. 향후 목록에 코스 여부가 필요하면 `has_schedule` 또는 `schedule_item_count`를 별도 추가한다.
 
 ## 2026-07-15 실API 검증 결과

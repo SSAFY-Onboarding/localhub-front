@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
+import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
 import { placeService } from '@/services/placeService'
 import type { Place } from '@/types/places'
 
@@ -95,7 +96,13 @@ onBeforeUnmount(() => {
     <div v-else-if="!places.length" class="place-picker-state"><p>검색 결과가 없습니다.</p></div>
     <ul v-else class="place-results">
       <li v-for="place in places" :key="place.id">
-        <div>
+        <PlaceThumbnail
+          :src="place.image_url"
+          :name="place.name"
+          :category="place.category"
+          size="picker"
+        />
+        <div class="place-result-copy">
           <span class="place-category">{{ place.category }}</span>
           <strong>{{ place.name }}</strong>
           <p>{{ place.address ?? '주소 정보 없음' }}</p>

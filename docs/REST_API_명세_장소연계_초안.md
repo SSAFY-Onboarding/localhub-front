@@ -134,6 +134,7 @@ export interface ScheduleItem {
   type: string
   lat: number | null
   lng: number | null
+  image_url: string | null
   time: string | null
   memo: string | null
 }
@@ -150,6 +151,7 @@ export interface ScheduleItem {
 | `type` | string | O | 작성 당시 카테고리 스냅샷 |
 | `lat` | number \| null | X | 작성 당시 위도 |
 | `lng` | number \| null | X | 작성 당시 경도 |
+| `image_url` | string \| null | X | 작성 당시 대표 이미지 URL 스냅샷 |
 | `time` | string \| null | X | `HH:mm`, 방문 예정 시간 |
 | `memo` | string \| null | X | 장소별 사용자 메모 |
 
@@ -171,6 +173,7 @@ function toScheduleItem(
     type: place.category,
     lat: place.latitude,
     lng: place.longitude,
+    image_url: place.image_url,
     time: null,
     memo: null,
   }
@@ -202,10 +205,10 @@ function toScheduleItem(
 
 ### 5.3 장소 정보 신뢰 기준
 
-프런트는 Places API 응답으로 `name`, `type`, `lat`, `lng`를 채워 전송한다. 백엔드는 `place_id`로 실제 장소를 조회하고 다음 필드를 서버 데이터로 덮어쓴 뒤 저장하는 방식을 권장한다.
+프런트는 Places API 응답으로 `name`, `type`, `lat`, `lng`, `image_url`을 채워 전송한다. 백엔드는 `place_id`로 실제 장소를 조회하고 다음 필드를 서버 데이터로 덮어쓴 뒤 저장하는 방식을 권장한다.
 
 ```text
-서버 기준: place_id, name, type, lat, lng
+서버 기준: place_id, name, type, lat, lng, image_url
 사용자 기준: day, order, time, memo
 ```
 
@@ -402,6 +405,7 @@ export interface ScheduleItem {
   type: string
   lat: number | null
   lng: number | null
+  image_url: string | null
   time: string | null
   memo: string | null
 }
@@ -544,4 +548,3 @@ PUT은 전달된 schedule로 전체 교체
 - 상세 화면에서 Day별 일정이 올바른 순서로 표시된다.
 - 좌표가 있는 일정 장소는 지도 화면으로 이동할 수 있다.
 - 기존 `schedule: null` 게시글도 오류 없이 표시된다.
-

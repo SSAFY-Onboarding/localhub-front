@@ -20,6 +20,7 @@ export interface ScheduleItem {
   type: string
   lat: number | null
   lng: number | null
+  image_url: string | null
   time: string | null
   memo: string | null
 }

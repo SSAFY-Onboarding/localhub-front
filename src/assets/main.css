@@ -764,7 +764,7 @@
 }
 .schedule-item {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 28px 60px 1fr auto;
   gap: 13px;
   align-items: start;
   padding: 18px;
@@ -887,6 +887,10 @@
   padding: 13px 3px;
   border-bottom: 1px solid var(--line);
 }
+.place-result-copy {
+  min-width: 0;
+  flex: 1;
+}
 .place-results strong {
   display: block;
   margin: 3px 0;
@@ -934,7 +938,7 @@
 }
 .timeline-day li {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 28px 76px 1fr;
   gap: 13px;
   position: relative;
   padding-bottom: 22px;
@@ -1209,6 +1213,14 @@
 .map-place-popup {
   min-width: 180px;
   font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
+}
+.map-place-popup > img {
+  display: block;
+  width: calc(100% + 36px);
+  height: 92px;
+  margin: -16px -18px 13px;
+  border-radius: 3px 3px 0 0;
+  object-fit: cover;
 }
 .map-place-popup span {
   display: block;
@@ -1655,10 +1667,14 @@
     align-items: flex-start;
   }
   .schedule-item {
-    grid-template-columns: 26px 1fr;
+    grid-template-columns: 26px 52px 1fr;
   }
   .schedule-item-actions {
-    grid-column: 2;
+    grid-column: 3;
+  }
+  .place-thumbnail-schedule {
+    width: 52px;
+    height: 52px;
   }
   .schedule-item-fields {
     grid-template-columns: 1fr;
@@ -1672,6 +1688,13 @@
   .timeline-day {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+  .timeline-day li {
+    grid-template-columns: 28px 64px 1fr;
+  }
+  .place-thumbnail-timeline {
+    width: 64px;
+    height: 52px;
   }
   .form-actions .button {
     flex: 1;
@@ -1969,7 +1992,7 @@
 }
 .map-place-list li > button {
   display: grid;
-  grid-template-columns: 13px minmax(0, 1fr);
+  grid-template-columns: 56px 13px minmax(0, 1fr);
   gap: 11px;
   width: 100%;
   border: 0;
@@ -1984,6 +2007,42 @@
 .map-place-list li > button:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: -2px;
+}
+.place-thumbnail {
+  display: block;
+  flex: none;
+  overflow: hidden;
+  background: #dcebe3;
+}
+.place-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.place-thumbnail-sidebar {
+  width: 56px;
+  height: 56px;
+  border-radius: 3px;
+}
+.place-thumbnail-picker {
+  width: 72px;
+  height: 56px;
+  border-radius: 3px;
+}
+.place-thumbnail-schedule {
+  width: 60px;
+  height: 60px;
+  border-radius: 3px;
+}
+.place-thumbnail-timeline {
+  width: 76px;
+  height: 58px;
+  border-radius: 3px;
+}
+.place-thumbnail-popup {
+  width: 96px;
+  height: 64px;
 }
 .map-list-marker {
   width: 11px;

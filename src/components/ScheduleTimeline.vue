@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
 import type { ScheduleItem } from '@/types/posts'
 
 const props = defineProps<{ items: ScheduleItem[] }>()
@@ -28,6 +29,12 @@ const grouped = computed(() => {
       <ol>
         <li v-for="item in group.items" :key="`${item.place_id}-${item.order}`">
           <span class="timeline-dot">{{ item.order }}</span>
+          <PlaceThumbnail
+            :src="item.image_url"
+            :name="item.name"
+            :category="item.type"
+            size="timeline"
+          />
           <div>
             <div class="timeline-place">
               <strong>{{ item.name }}</strong

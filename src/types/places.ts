@@ -36,6 +36,7 @@ export interface MarkerPlace {
   address: string | null
   latitude: number | null
   longitude: number | null
+  image_url: string | null
 }
 
 export interface MapPlacesResponse {

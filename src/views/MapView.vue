@@ -3,8 +3,10 @@ import 'leaflet/dist/leaflet.css'
 import L, { type Map as LeafletMap, type Marker, type Popup } from 'leaflet'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
 import { placeService } from '@/services/placeService'
 import type { MarkerPlace } from '@/types/places'
+import { fallbackPlaceThumbnail } from '@/utils/placeThumbnail'
 
 type SheetState = 'peek' | 'half' | 'full'
 type PlaceMarker = Marker & { placeCategory?: string; placeId?: string }
@@ -89,7 +91,19 @@ function popupContent(place: MarkerPlace) {
   name.textContent = place.name
   const address = document.createElement('p')
   address.textContent = place.address ?? '주소 정보 없음'
-  container.append(category, name, address)
+  const image = document.createElement('img')
+  image.src = place.image_url || fallbackPlaceThumbnail(place.category)
+  image.alt = `${place.name} 대표 이미지`
+  image.loading = 'lazy'
+  image.referrerPolicy = 'no-referrer'
+  image.addEventListener(
+    'error',
+    () => {
+      image.src = fallbackPlaceThumbnail(place.category)
+    },
+    { once: true },
+  )
+  container.append(image, category, name, address)
   return container
 }
 
@@ -410,6 +424,12 @@ onBeforeUnmount(() => {
                 :class="{ active: selectedPlace?.id === place.id }"
               >
                 <button type="button" @click="selectPlace(place)">
+                  <PlaceThumbnail
+                    :src="place.image_url"
+                    :name="place.name"
+                    :category="place.category"
+                    size="sidebar"
+                  />
                   <span
                     class="map-list-marker"
                     :style="{ background: categoryColors[place.category] ?? '#114b3b' }"
