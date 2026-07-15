@@ -100,10 +100,10 @@ async function fetchPlaces() {
     }
     const results = await Promise.all(
       allCategoriesSelected.value
-        ? [placeService.getMapPlaces(mapBounds, '', controller.signal)]
+        ? [placeService.getMapPlaces(mapBounds, '', '', controller.signal)]
         : selectedCategories.value.length
           ? selectedCategories.value.map((category) =>
-              placeService.getMapPlaces(mapBounds, category, controller.signal),
+              placeService.getMapPlaces(mapBounds, category, '', controller.signal),
             )
           : [],
     )
