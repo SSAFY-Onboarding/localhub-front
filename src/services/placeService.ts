@@ -86,9 +86,11 @@ export const placeService = {
   async getMapPlaces(
     bounds: MapBounds,
     category = '',
+    keyword = '',
     signal?: AbortSignal,
   ): Promise<MapPlacesResponse> {
     if (useMock) {
+      const trimmedKeyword = keyword.trim().toLocaleLowerCase('ko-KR')
       const items = mockPlaces.filter(
         (place) =>
           place.latitude !== null &&
@@ -97,7 +99,11 @@ export const placeService = {
           place.latitude <= bounds.north &&
           place.longitude >= bounds.west &&
           place.longitude <= bounds.east &&
-          (!category || place.category === category),
+          (!category || place.category === category) &&
+          (!trimmedKeyword ||
+            `${place.name} ${place.address ?? ''}`
+              .toLocaleLowerCase('ko-KR')
+              .includes(trimmedKeyword)),
       )
       return { items, total: items.length, truncated: false }
     }
@@ -108,6 +114,7 @@ export const placeService = {
       east: String(bounds.east),
     })
     if (category) query.set('category', category)
+    if (keyword.trim()) query.set('keyword', keyword.trim())
     return get<MapPlacesResponse>(`/places/map?${query}`, signal)
   },
 }

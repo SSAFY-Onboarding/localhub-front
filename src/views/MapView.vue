@@ -39,13 +39,7 @@ const pageSize = 12
 const allCategoriesSelected = computed(
   () => categories.value.length > 0 && selectedCategories.value.length === categories.value.length,
 )
-const filteredPlaces = computed(() => {
-  const keyword = searchKeyword.value.toLocaleLowerCase('ko-KR')
-  if (!keyword) return places.value
-  return places.value.filter((place) =>
-    `${place.name} ${place.address ?? ''}`.toLocaleLowerCase('ko-KR').includes(keyword),
-  )
-})
+const filteredPlaces = computed(() => places.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredPlaces.value.length / pageSize)))
 const pagedPlaces = computed(() =>
   filteredPlaces.value.slice((listPage.value - 1) * pageSize, listPage.value * pageSize),
@@ -180,10 +174,17 @@ async function fetchPlaces() {
     }
     const results = await Promise.all(
       allCategoriesSelected.value
-        ? [placeService.getMapPlaces(mapBounds, '', controller.signal)]
-        : selectedCategories.value.map((category) =>
-            placeService.getMapPlaces(mapBounds, category, controller.signal),
-          ),
+        ? [placeService.getMapPlaces(mapBounds, '', searchKeyword.value, controller.signal)]
+        : selectedCategories.value.length
+          ? selectedCategories.value.map((category) =>
+              placeService.getMapPlaces(
+                mapBounds,
+                category,
+                searchKeyword.value,
+                controller.signal,
+              ),
+            )
+          : [],
     )
     places.value = [
       ...new Map(
@@ -211,20 +212,23 @@ async function fetchPlaces() {
   }
 }
 
-function applySearch() {
+async function applySearch() {
   searchKeyword.value = searchInput.value.trim()
   listPage.value = 1
   selectedPlace.value = null
   placePopup?.remove()
   void router.replace({ query: {} })
-  applyDisplayedPlaces()
+  await fetchPlaces()
 }
 
-function clearSearch() {
+async function clearSearch() {
   searchInput.value = ''
   searchKeyword.value = ''
   listPage.value = 1
-  applyDisplayedPlaces()
+  selectedPlace.value = null
+  placePopup?.remove()
+  void router.replace({ query: {} })
+  await fetchPlaces()
 }
 
 function selectAllCategories() {
@@ -361,6 +365,7 @@ onBeforeUnmount(() => {
             ><input
               id="map-place-search"
               v-model="searchInput"
+              maxlength="100"
               placeholder="장소명 또는 주소 검색"
             /><button type="submit">검색</button
             ><button
