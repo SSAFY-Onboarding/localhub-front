@@ -5,19 +5,31 @@ export interface ChatHistoryItem {
 
 export interface ChatRequest {
   message: string
-  accommodation_id: number
+  accommodation_id: string | null
   history: ChatHistoryItem[]
 }
+
 export interface RecommendedPlace {
   id: string
   name: string
   category: string
   latitude: number
   longitude: number
-  distance: number
+  distance: number | null
+  address?: string
+  image_url?: string
+  description?: string
+  phone?: string
+}
+
+export interface MapCenter {
+  latitude: number
+  longitude: number
 }
 
 export interface ChatResponse {
   answer: string
   places: RecommendedPlace[]
+  center: MapCenter | null
+  query_type: string
 }
