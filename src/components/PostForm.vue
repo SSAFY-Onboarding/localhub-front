@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
 import ScheduleEditor from '@/components/ScheduleEditor.vue'
+import ScheduleMap from '@/components/ScheduleMap.vue'
 import type { ScheduleItem } from '@/types/posts'
 
 const props = withDefaults(
@@ -101,6 +102,7 @@ function submit() {
       :disabled="busy"
       @update:model-value="schedule.splice(0, schedule.length, ...$event)"
     />
+    <ScheduleMap :items="schedule" compact />
     <div class="form-actions">
       <button class="button secondary" type="button" :disabled="busy" @click="emit('cancel')">
         취소

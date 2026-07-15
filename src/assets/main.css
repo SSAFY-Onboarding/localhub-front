@@ -973,6 +973,103 @@
   font-size: 11px;
   font-weight: 800;
 }
+.schedule-map-section {
+  margin: 8px 0 42px;
+  border-top: 1px solid var(--line);
+  padding-top: 30px;
+}
+.schedule-map-section.compact {
+  margin-top: 32px;
+}
+.schedule-map-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+.schedule-map-heading h2 {
+  margin-top: 6px;
+  font-size: 23px;
+}
+.schedule-map-heading > span,
+.schedule-map-note {
+  color: var(--muted);
+  font-size: 11px;
+}
+.schedule-map-canvas {
+  width: 100%;
+  height: 380px;
+  border: 1px solid var(--line);
+  background: #dce6df;
+  z-index: 0;
+}
+.schedule-map-section.compact .schedule-map-canvas {
+  height: 330px;
+}
+.schedule-map-note {
+  margin-top: 8px;
+}
+.schedule-map-marker-shell {
+  border: 0;
+  background: transparent;
+}
+.schedule-map-marker {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--schedule-color);
+  color: #fff;
+  box-shadow:
+    0 0 0 1px rgba(15, 45, 36, 0.35),
+    0 3px 9px rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+  font-weight: 800;
+}
+.schedule-place-popup .leaflet-popup-content-wrapper {
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.schedule-place-popup .leaflet-popup-content {
+  margin: 0;
+}
+.schedule-map-popup {
+  min-width: 190px;
+  font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
+}
+.schedule-map-popup img {
+  display: block;
+  width: 100%;
+  height: 95px;
+  object-fit: cover;
+}
+.schedule-map-popup span,
+.schedule-map-popup strong,
+.schedule-map-popup p {
+  display: block;
+  margin-inline: 15px;
+}
+.schedule-map-popup span {
+  margin-top: 12px;
+  color: var(--orange);
+  font-size: 9px;
+  font-weight: 800;
+}
+.schedule-map-popup strong {
+  margin-top: 3px;
+  margin-bottom: 12px;
+  color: var(--ink);
+  font-size: 14px;
+}
+.schedule-map-popup p {
+  margin-top: -5px;
+  margin-bottom: 13px;
+  color: var(--muted);
+  font-size: 10px;
+}
 .modal-close {
   position: absolute;
   right: 15px;
@@ -1695,6 +1792,10 @@
   .place-thumbnail-timeline {
     width: 64px;
     height: 52px;
+  }
+  .schedule-map-canvas,
+  .schedule-map-section.compact .schedule-map-canvas {
+    height: 290px;
   }
   .form-actions .button {
     flex: 1;

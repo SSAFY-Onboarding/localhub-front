@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PasswordModal from '@/components/PasswordModal.vue'
 import ScheduleTimeline from '@/components/ScheduleTimeline.vue'
+import ScheduleMap from '@/components/ScheduleMap.vue'
 import { postService } from '@/services/postService'
 import { ApiError, type PostDetail } from '@/types/posts'
 
@@ -111,6 +112,7 @@ onMounted(load)
       </header>
       <div class="post-content">{{ post.content }}</div>
       <ScheduleTimeline :items="post.schedule ?? []" />
+      <ScheduleMap :items="post.schedule ?? []" />
       <div class="post-recommend">
         <button class="like-button" type="button" :disabled="liking" @click="likePost">
           <span aria-hidden="true">♥</span>
