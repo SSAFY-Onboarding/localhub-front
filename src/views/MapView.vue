@@ -33,6 +33,8 @@ let map: LeafletMap | null = null
 let placePopup: Popup | null = null
 let markers: PlaceMarker[] = []
 let requestController: AbortController | null = null
+let fetchTimer: ReturnType<typeof setTimeout> | null = null
+let zooming = false
 let categoriesReady = false
 
 const pageSize = 12
@@ -212,6 +214,11 @@ async function fetchPlaces() {
   }
 }
 
+function scheduleFetch() {
+  if (fetchTimer) clearTimeout(fetchTimer)
+  fetchTimer = setTimeout(() => void fetchPlaces(), 250)
+}
+
 async function applySearch() {
   searchKeyword.value = searchInput.value.trim()
   listPage.value = 1
@@ -284,8 +291,16 @@ onMounted(async () => {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
   }).addTo(map)
+  map.on('zoomstart', () => {
+    zooming = true
+  })
   map.on('moveend', () => {
-    boundsDirty.value = true
+    if (zooming) {
+      zooming = false
+      scheduleFetch()
+    } else {
+      boundsDirty.value = true
+    }
     markers.forEach((marker) =>
       marker.setIcon(
         markerIcon(marker.placeCategory ?? '', marker.placeId === selectedPlace.value?.id),
@@ -314,6 +329,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   requestController?.abort()
+  if (fetchTimer) clearTimeout(fetchTimer)
   map?.remove()
   map = null
   placePopup = null
