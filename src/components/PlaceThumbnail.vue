@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { fallbackPlaceThumbnail } from '@/utils/placeThumbnail'
+import { resolveImageUrl } from '@/utils/imageUrl'
 
 const props = withDefaults(
   defineProps<{
@@ -20,7 +21,9 @@ watch(
   },
 )
 const imageSrc = computed(() =>
-  !failed.value && props.src ? props.src : fallbackPlaceThumbnail(props.category),
+  !failed.value && resolveImageUrl(props.src)
+    ? resolveImageUrl(props.src)!
+    : fallbackPlaceThumbnail(props.category),
 )
 </script>
 

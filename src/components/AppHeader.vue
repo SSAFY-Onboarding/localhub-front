@@ -25,6 +25,7 @@ const route = useRoute()
       <nav :class="['main-nav', { open }]" aria-label="주 메뉴">
         <RouterLink to="/" @click="open = false">홈</RouterLink>
         <RouterLink to="/map" @click="open = false">지역 지도</RouterLink>
+        <RouterLink to="/chatbot" @click="open = false">AI 여행 추천</RouterLink>
         <RouterLink
           :class="{ 'router-link-active': route.path.startsWith('/posts') }"
           to="/posts"
