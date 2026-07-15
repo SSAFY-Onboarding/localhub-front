@@ -1,29 +1,51 @@
 <script setup lang="ts">
 import 'leaflet/dist/leaflet.css'
-import L, { type Map as LeafletMap, type Marker } from 'leaflet'
+import L, { type Map as LeafletMap, type Marker, type Popup } from 'leaflet'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { placeService } from '@/services/placeService'
 import type { MarkerPlace } from '@/types/places'
 
+type SheetState = 'peek' | 'half' | 'full'
+type PlaceMarker = Marker & { placeCategory?: string; placeId?: string }
+
 const route = useRoute()
 const router = useRouter()
 const mapElement = ref<HTMLElement | null>(null)
+const listElement = ref<HTMLElement | null>(null)
 const categories = ref<string[]>([])
 const selectedCategories = ref<string[]>([])
+const places = ref<MarkerPlace[]>([])
 const selectedPlace = ref<MarkerPlace | null>(null)
+const searchInput = ref('')
+const searchKeyword = ref('')
+const listPage = ref(1)
+const sheetState = ref<SheetState>('peek')
 const loading = ref(true)
 const error = ref('')
-const total = ref(0)
+const areaTotal = ref(0)
 const truncated = ref(false)
+const boundsDirty = ref(false)
 let map: LeafletMap | null = null
-let markers: Marker[] = []
+let placePopup: Popup | null = null
+let markers: PlaceMarker[] = []
 let requestController: AbortController | null = null
-let fetchTimer: ReturnType<typeof setTimeout> | null = null
 let categoriesReady = false
 
+const pageSize = 12
 const allCategoriesSelected = computed(
   () => categories.value.length > 0 && selectedCategories.value.length === categories.value.length,
+)
+const filteredPlaces = computed(() => {
+  const keyword = searchKeyword.value.toLocaleLowerCase('ko-KR')
+  if (!keyword) return places.value
+  return places.value.filter((place) =>
+    `${place.name} ${place.address ?? ''}`.toLocaleLowerCase('ko-KR').includes(keyword),
+  )
+})
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredPlaces.value.length / pageSize)))
+const pagedPlaces = computed(() =>
+  filteredPlaces.value.slice((listPage.value - 1) * pageSize, listPage.value * pageSize),
 )
 
 const categoryColors: Record<string, string> = {
@@ -49,6 +71,48 @@ function markerIcon(category: string, active = false) {
   })
 }
 
+function updateMarkerSelection() {
+  markers.forEach((marker) =>
+    marker.setIcon(
+      markerIcon(marker.placeCategory ?? '', marker.placeId === selectedPlace.value?.id),
+    ),
+  )
+}
+
+function popupContent(place: MarkerPlace) {
+  const container = document.createElement('div')
+  container.className = 'map-place-popup'
+  const category = document.createElement('span')
+  category.textContent = place.category
+  const name = document.createElement('strong')
+  name.textContent = place.name
+  const address = document.createElement('p')
+  address.textContent = place.address ?? '주소 정보 없음'
+  container.append(category, name, address)
+  return container
+}
+
+function openPlacePopup(place: MarkerPlace) {
+  if (!map || !placePopup || place.latitude === null || place.longitude === null) return
+  placePopup
+    .setLatLng([place.latitude, place.longitude])
+    .setContent(popupContent(place))
+    .openOn(map)
+}
+
+async function selectPlace(place: MarkerPlace, moveMap = true) {
+  selectedPlace.value = place
+  updateMarkerSelection()
+  if (moveMap && map && place.latitude !== null && place.longitude !== null) {
+    map.panTo([place.latitude, place.longitude])
+  }
+  openPlacePopup(place)
+  void router.replace({ query: { place: place.id } })
+  if (window.matchMedia('(max-width: 760px)').matches) sheetState.value = 'half'
+  await nextTick()
+  document.getElementById(`map-place-${place.id}`)?.scrollIntoView({ block: 'nearest' })
+}
+
 function renderMarkers(items: MarkerPlace[]) {
   markers.forEach((marker) => marker.remove())
   markers = []
@@ -59,31 +123,32 @@ function renderMarkers(items: MarkerPlace[]) {
       icon: markerIcon(place.category, selectedPlace.value?.id === place.id),
       title: place.name,
       keyboard: true,
-    })
-    marker.on('click', () => {
-      selectedPlace.value = place
-      void router.replace({ query: { ...route.query, place: place.id } })
-      markers.forEach((item) =>
-        item.setIcon(markerIcon((item as Marker & { placeCategory?: string }).placeCategory ?? '')),
-      )
-      ;(marker as Marker & { placeCategory?: string }).placeCategory = place.category
-      marker.setIcon(markerIcon(place.category, true))
-    })
-    ;(marker as Marker & { placeCategory?: string }).placeCategory = place.category
+    }) as PlaceMarker
+    marker.placeCategory = place.category
+    marker.placeId = place.id
+    marker.on('click', () => void selectPlace(place, false))
     marker.addTo(map!)
     markers.push(marker)
   })
 }
 
+function applyDisplayedPlaces() {
+  listPage.value = Math.min(listPage.value, totalPages.value)
+  renderMarkers(filteredPlaces.value)
+}
+
 async function fetchPlaces() {
   if (!map) return
   requestController?.abort()
+  boundsDirty.value = false
   if (categoriesReady && selectedCategories.value.length === 0) {
-    renderMarkers([])
-    total.value = 0
+    places.value = []
+    selectedPlace.value = null
+    areaTotal.value = 0
     truncated.value = false
     loading.value = false
     error.value = ''
+    applyDisplayedPlaces()
     return
   }
   const controller = new AbortController()
@@ -101,22 +166,28 @@ async function fetchPlaces() {
     const results = await Promise.all(
       allCategoriesSelected.value
         ? [placeService.getMapPlaces(mapBounds, '', controller.signal)]
-        : selectedCategories.value.length
-          ? selectedCategories.value.map((category) =>
-              placeService.getMapPlaces(mapBounds, category, controller.signal),
-            )
-          : [],
+        : selectedCategories.value.map((category) =>
+            placeService.getMapPlaces(mapBounds, category, controller.signal),
+          ),
     )
-    const places = [
+    places.value = [
       ...new Map(
         results.flatMap((result) => result.items).map((place) => [place.id, place]),
       ).values(),
     ]
-    total.value = results.reduce((sum, result) => sum + result.total, 0)
+    areaTotal.value = results.reduce((sum, result) => sum + result.total, 0)
     truncated.value = results.some((result) => result.truncated)
-    renderMarkers(places)
-    const selected = places.find((place) => place.id === route.query.place)
-    if (selected) selectedPlace.value = selected
+    listPage.value = 1
+    const requestedPlace = places.value.find((place) => place.id === route.query.place)
+    if (requestedPlace) {
+      selectedPlace.value = requestedPlace
+      openPlacePopup(requestedPlace)
+    } else if (selectedPlace.value) {
+      selectedPlace.value = null
+      placePopup?.remove()
+      void router.replace({ query: {} })
+    }
+    applyDisplayedPlaces()
   } catch (cause) {
     if (!(cause instanceof DOMException && cause.name === 'AbortError'))
       error.value = '현재 지도 영역의 장소를 불러오지 못했습니다.'
@@ -125,17 +196,20 @@ async function fetchPlaces() {
   }
 }
 
-function scheduleFetch() {
-  if (fetchTimer) clearTimeout(fetchTimer)
-  fetchTimer = setTimeout(fetchPlaces, 250)
+function applySearch() {
+  searchKeyword.value = searchInput.value.trim()
+  listPage.value = 1
+  selectedPlace.value = null
+  placePopup?.remove()
+  void router.replace({ query: {} })
+  applyDisplayedPlaces()
 }
 
-function closePlace() {
-  selectedPlace.value = null
-  void router.replace({ query: { ...route.query, place: undefined } })
-  markers.forEach((marker) =>
-    marker.setIcon(markerIcon((marker as Marker & { placeCategory?: string }).placeCategory ?? '')),
-  )
+function clearSearch() {
+  searchInput.value = ''
+  searchKeyword.value = ''
+  listPage.value = 1
+  applyDisplayedPlaces()
 }
 
 function selectAllCategories() {
@@ -148,8 +222,19 @@ function toggleCategory(category: string) {
     : [...selectedCategories.value, category]
 }
 
+function changePage(page: number) {
+  listPage.value = page
+  listElement.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function cycleSheet() {
+  sheetState.value =
+    sheetState.value === 'peek' ? 'half' : sheetState.value === 'half' ? 'full' : 'peek'
+}
+
 watch(selectedCategories, () => {
   selectedPlace.value = null
+  placePopup?.remove()
   void router.replace({ query: {} })
   void fetchPlaces()
 })
@@ -161,12 +246,26 @@ onMounted(async () => {
     [37.5665, 126.978],
     12,
   )
+  placePopup = L.popup({ maxWidth: 280, offset: [0, -8], className: 'localhub-map-popup' })
+  map.on('popupclose', () => {
+    if (!selectedPlace.value) return
+    selectedPlace.value = null
+    updateMarkerSelection()
+    void router.replace({ query: {} })
+  })
   L.control.zoom({ position: 'bottomright' }).addTo(map)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 19,
   }).addTo(map)
-  map.on('moveend', scheduleFetch)
+  map.on('moveend', () => {
+    boundsDirty.value = true
+    markers.forEach((marker) =>
+      marker.setIcon(
+        markerIcon(marker.placeCategory ?? '', marker.placeId === selectedPlace.value?.id),
+      ),
+    )
+  })
   try {
     categories.value = await placeService.getCategories()
     selectedCategories.value.push(...categories.value)
@@ -189,81 +288,143 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   requestController?.abort()
-  if (fetchTimer) clearTimeout(fetchTimer)
   map?.remove()
   map = null
+  placePopup = null
 })
 </script>
 
 <template>
-  <section class="map-page">
+  <section class="map-page integrated-map-page">
     <div class="container map-page-heading">
       <div>
         <span class="eyebrow dark">EXPLORE SEOUL</span>
         <h1>지역 지도</h1>
-        <p>지도를 움직이거나 유형을 선택해 서울의 다양한 장소를 둘러보세요.</p>
+        <p>지도와 목록을 함께 보며 서울의 장소를 탐색하세요.</p>
       </div>
       <div class="map-result-summary">
-        <strong>{{ total.toLocaleString('ko-KR') }}</strong
-        ><span>현재 영역 장소</span>
+        <strong>{{ filteredPlaces.length.toLocaleString('ko-KR') }}</strong
+        ><span>표시 장소</span>
       </div>
     </div>
-    <div class="container map-category-bar" role="group" aria-label="장소 유형 필터">
-      <button
-        :class="{ active: allCategoriesSelected }"
-        type="button"
-        :aria-pressed="allCategoriesSelected"
-        :aria-label="allCategoriesSelected ? '전체 카테고리 선택 해제' : '전체 카테고리 선택'"
-        @click="selectAllCategories"
-      >
-        전체
-      </button>
-      <button
-        v-for="category in categories"
-        :key="category"
-        :class="{ active: selectedCategories.includes(category) }"
-        type="button"
-        :aria-pressed="selectedCategories.includes(category)"
-        @click="toggleCategory(category)"
-      >
-        {{ category }}
-      </button>
-    </div>
-    <div class="map-stage">
-      <div ref="mapElement" class="local-map" aria-label="서울 장소 지도"></div>
-      <div v-if="loading" class="map-status loading">
-        <span class="spinner"></span><span>장소를 불러오는 중</span>
-      </div>
-      <div v-else-if="error" class="map-status error">
-        <span>{{ error }}</span
-        ><button type="button" @click="fetchPlaces">다시 시도</button>
-      </div>
-      <div v-else-if="!selectedCategories.length" class="map-status empty">
-        표시할 장소 유형을 선택해 주세요.
-      </div>
-      <div v-if="truncated && !loading" class="map-zoom-notice">
-        장소가 너무 많아 일부만 표시합니다. 지도를 확대해 주세요.
-      </div>
-      <aside v-if="selectedPlace" class="map-place-card">
+    <div class="map-explorer">
+      <aside :class="['map-sidebar', `sheet-${sheetState}`]" aria-label="장소 검색과 목록">
         <button
-          class="map-place-close"
+          class="map-sheet-handle"
           type="button"
-          aria-label="장소 정보 닫기"
-          @click="closePlace"
+          :aria-label="`목록 패널 ${sheetState === 'full' ? '축소' : '확장'}`"
+          @click="cycleSheet"
         >
-          ×
+          <span></span><strong>현재 영역 장소 {{ areaTotal.toLocaleString('ko-KR') }}개</strong
+          ><small>{{
+            sheetState === 'peek' ? '목록 보기' : sheetState === 'half' ? '전체 보기' : '지도 보기'
+          }}</small>
         </button>
-        <span class="place-category">{{ selectedPlace.category }}</span>
-        <h2>{{ selectedPlace.name }}</h2>
-        <p>{{ selectedPlace.address ?? '주소 정보 없음' }}</p>
-        <a
-          v-if="selectedPlace.latitude !== null && selectedPlace.longitude !== null"
-          :href="`https://www.openstreetmap.org/?mlat=${selectedPlace.latitude}&mlon=${selectedPlace.longitude}#map=17/${selectedPlace.latitude}/${selectedPlace.longitude}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          >큰 지도에서 보기 ↗</a
-        >
+        <div class="map-sidebar-content">
+          <form class="map-search" role="search" @submit.prevent="applySearch">
+            <label class="sr-only" for="map-place-search">현재 영역 장소 검색</label
+            ><input
+              id="map-place-search"
+              v-model="searchInput"
+              placeholder="장소명 또는 주소 검색"
+            /><button type="submit">검색</button
+            ><button
+              v-if="searchKeyword"
+              class="map-search-clear"
+              type="button"
+              aria-label="검색어 지우기"
+              @click="clearSearch"
+            >
+              ×
+            </button>
+          </form>
+          <div class="map-category-bar" role="group" aria-label="장소 유형 필터">
+            <button
+              :class="{ active: allCategoriesSelected }"
+              type="button"
+              :aria-pressed="allCategoriesSelected"
+              @click="selectAllCategories"
+            >
+              전체</button
+            ><button
+              v-for="category in categories"
+              :key="category"
+              :class="{ active: selectedCategories.includes(category) }"
+              type="button"
+              :aria-pressed="selectedCategories.includes(category)"
+              @click="toggleCategory(category)"
+            >
+              {{ category }}
+            </button>
+          </div>
+          <div class="map-list-summary">
+            <p>
+              <strong>{{ filteredPlaces.length.toLocaleString('ko-KR') }}</strong
+              >개 표시<template v-if="searchKeyword"> · ‘{{ searchKeyword }}’ 검색</template>
+            </p>
+            <button v-if="searchKeyword" type="button" @click="clearSearch">초기화</button>
+          </div>
+          <div ref="listElement" class="map-place-list-wrap">
+            <div v-if="loading" class="map-list-state">
+              <span class="spinner"></span>
+              <p>장소를 불러오는 중입니다.</p>
+            </div>
+            <div v-else-if="error" class="map-list-state">
+              <span class="state-icon">!</span>
+              <p>{{ error }}</p>
+              <button type="button" @click="fetchPlaces">다시 시도</button>
+            </div>
+            <div v-else-if="!selectedCategories.length" class="map-list-state">
+              <p>표시할 장소 유형을 선택해 주세요.</p>
+            </div>
+            <div v-else-if="!filteredPlaces.length" class="map-list-state">
+              <p>조건에 맞는 장소가 없습니다.</p>
+              <button v-if="searchKeyword" type="button" @click="clearSearch">검색 초기화</button>
+            </div>
+            <ul v-else class="map-place-list">
+              <li
+                v-for="place in pagedPlaces"
+                :id="`map-place-${place.id}`"
+                :key="place.id"
+                :class="{ active: selectedPlace?.id === place.id }"
+              >
+                <button type="button" @click="selectPlace(place)">
+                  <span
+                    class="map-list-marker"
+                    :style="{ background: categoryColors[place.category] ?? '#114b3b' }"
+                  ></span
+                  ><span
+                    ><small>{{ place.category }}</small
+                    ><strong>{{ place.name }}</strong
+                    ><em>{{ place.address ?? '주소 정보 없음' }}</em></span
+                  >
+                </button>
+              </li>
+            </ul>
+          </div>
+          <div v-if="totalPages > 1" class="map-list-pagination">
+            <button type="button" :disabled="listPage <= 1" @click="changePage(listPage - 1)">
+              ← 이전</button
+            ><span>{{ listPage }} / {{ totalPages }}</span
+            ><button
+              type="button"
+              :disabled="listPage >= totalPages"
+              @click="changePage(listPage + 1)"
+            >
+              다음 →
+            </button>
+          </div>
+        </div>
       </aside>
+      <div class="map-canvas-wrap">
+        <div ref="mapElement" class="local-map" aria-label="서울 장소 지도"></div>
+        <button v-if="boundsDirty" class="map-research-button" type="button" @click="fetchPlaces">
+          이 지역에서 다시 검색
+        </button>
+        <div v-if="truncated && !loading" class="map-zoom-notice">
+          장소가 너무 많아 일부만 표시합니다. 지도를 확대해 주세요.
+        </div>
+      </div>
     </div>
   </section>
 </template>
