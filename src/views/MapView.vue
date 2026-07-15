@@ -21,6 +21,7 @@ const searchInput = ref('')
 const searchKeyword = ref('')
 const listPage = ref(1)
 const sheetState = ref<SheetState>('peek')
+const sidebarCollapsed = ref(false)
 const loading = ref(true)
 const error = ref('')
 const areaTotal = ref(0)
@@ -232,6 +233,12 @@ function cycleSheet() {
     sheetState.value === 'peek' ? 'half' : sheetState.value === 'half' ? 'full' : 'peek'
 }
 
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  sessionStorage.setItem('localhub-map-sidebar-collapsed', String(sidebarCollapsed.value))
+  window.setTimeout(() => map?.invalidateSize(), 230)
+}
+
 watch(selectedCategories, () => {
   selectedPlace.value = null
   placePopup?.remove()
@@ -240,6 +247,7 @@ watch(selectedCategories, () => {
 })
 
 onMounted(async () => {
+  sidebarCollapsed.value = sessionStorage.getItem('localhub-map-sidebar-collapsed') === 'true'
   await nextTick()
   if (!mapElement.value) return
   map = L.map(mapElement.value, { zoomControl: false, minZoom: 10, maxZoom: 18 }).setView(
@@ -307,8 +315,21 @@ onBeforeUnmount(() => {
         ><span>표시 장소</span>
       </div>
     </div>
-    <div class="map-explorer">
-      <aside :class="['map-sidebar', `sheet-${sheetState}`]" aria-label="장소 검색과 목록">
+    <div :class="['map-explorer', { 'sidebar-collapsed': sidebarCollapsed }]">
+      <aside
+        :class="['map-sidebar', `sheet-${sheetState}`, { collapsed: sidebarCollapsed }]"
+        aria-label="장소 검색과 목록"
+      >
+        <button
+          class="map-sidebar-toggle"
+          type="button"
+          :aria-expanded="!sidebarCollapsed"
+          :aria-label="sidebarCollapsed ? '장소 목록 펼치기' : '장소 목록 접기'"
+          @click="toggleSidebar"
+        >
+          <span aria-hidden="true">{{ sidebarCollapsed ? '→' : '←' }}</span>
+          <small v-if="sidebarCollapsed">목록</small>
+        </button>
         <button
           class="map-sheet-handle"
           type="button"

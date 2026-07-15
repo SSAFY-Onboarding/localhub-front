@@ -1789,20 +1789,24 @@
   background: #f3f1eb;
 }
 .integrated-map-page .map-page-heading {
-  width: min(1440px, calc(100% - 40px));
-  margin-bottom: 22px;
+  width: min(1600px, calc(100% - 48px));
+  margin-bottom: 16px;
 }
 .map-explorer {
   display: grid;
   grid-template-columns: 370px minmax(0, 1fr);
-  width: min(1440px, calc(100% - 40px));
-  height: min(720px, calc(100vh - 210px));
+  width: min(1600px, calc(100% - 48px));
+  height: calc(100dvh - 320px);
   min-height: 560px;
   margin-inline: auto;
   border-top: 1px solid var(--line);
   border-right: 1px solid var(--line);
   border-left: 1px solid var(--line);
   background: #fff;
+  transition: grid-template-columns 0.22s ease;
+}
+.map-explorer.sidebar-collapsed {
+  grid-template-columns: 48px minmax(0, 1fr);
 }
 .map-sidebar {
   position: relative;
@@ -1812,6 +1816,40 @@
   border-right: 1px solid var(--line);
   background: var(--paper);
   box-shadow: 7px 0 25px rgba(15, 48, 38, 0.08);
+}
+.map-sidebar-toggle {
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  right: -1px;
+  display: flex;
+  width: 30px;
+  min-height: 58px;
+  transform: translateY(-50%);
+  border: 1px solid var(--line);
+  border-right: 0;
+  background: var(--paper);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--green);
+  cursor: pointer;
+}
+.map-sidebar-toggle small {
+  font-size: 9px;
+  font-weight: 800;
+  writing-mode: vertical-rl;
+}
+.map-sidebar.collapsed .map-sidebar-toggle {
+  right: 8px;
+  width: 32px;
+  border-right: 1px solid var(--line);
+}
+.map-sidebar.collapsed .map-sidebar-content {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 .map-sheet-handle {
   display: none;
@@ -2073,6 +2111,17 @@
     overflow: hidden;
     border-right: 0;
     border-left: 0;
+  }
+  .map-explorer.sidebar-collapsed {
+    grid-template-columns: none;
+  }
+  .map-sidebar-toggle {
+    display: none;
+  }
+  .map-sidebar.collapsed .map-sidebar-content {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
   }
   .map-canvas-wrap {
     position: absolute;
