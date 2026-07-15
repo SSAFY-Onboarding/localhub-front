@@ -14,7 +14,9 @@ import { RouterLink } from 'vue-router'
             가깝게 만나보세요.
           </p>
           <div class="hero-actions">
-            <span class="button primary disabled" aria-disabled="true">지역 지도 준비 중</span>
+            <RouterLink class="button primary" to="/map"
+              >지역 지도 보기 <span aria-hidden="true">→</span></RouterLink
+            >
             <RouterLink class="button light" to="/posts"
               >커뮤니티 보기 <span aria-hidden="true">→</span></RouterLink
             >
@@ -43,7 +45,7 @@ import { RouterLink } from 'vue-router'
           <div class="feature-icon map">⌖</div>
           <h3>지역 지도</h3>
           <p>관광지, 문화시설, 축제 등 서울의 다양한 장소를 지도에서 한눈에 살펴보세요.</p>
-          <span class="text-link muted">준비 중</span>
+          <RouterLink class="text-link" to="/map">장소 둘러보기 →</RouterLink>
         </article>
         <article class="feature-card featured">
           <span class="feature-number">02</span>

@@ -24,7 +24,7 @@ const route = useRoute()
       </button>
       <nav :class="['main-nav', { open }]" aria-label="주 메뉴">
         <RouterLink to="/" @click="open = false">홈</RouterLink>
-        <span class="nav-disabled" title="지도 화면 준비 중">지역 지도</span>
+        <RouterLink to="/map" @click="open = false">지역 지도</RouterLink>
         <RouterLink
           :class="{ 'router-link-active': route.path.startsWith('/posts') }"
           to="/posts"

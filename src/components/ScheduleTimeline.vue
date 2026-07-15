@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import type { ScheduleItem } from '@/types/posts'
 
 const props = defineProps<{ items: ScheduleItem[] }>()
@@ -34,6 +35,12 @@ const grouped = computed(() => {
               ><time v-if="item.time">{{ item.time }}</time>
             </div>
             <p v-if="item.memo">{{ item.memo }}</p>
+            <RouterLink
+              v-if="item.lat !== null && item.lng !== null"
+              class="timeline-map-link"
+              :to="{ name: 'map', query: { place: item.place_id } }"
+              >지도에서 보기 →</RouterLink
+            >
           </div>
         </li>
       </ol>

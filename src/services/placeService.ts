@@ -5,6 +5,8 @@ import type {
   PlaceCategoryResponse,
   PlaceListResponse,
   PlaceSearchParams,
+  MapBounds,
+  MapPlacesResponse,
 } from '@/types/places'
 
 const useMock = import.meta.env.VITE_USE_PLACE_MOCK === 'true'
@@ -80,5 +82,32 @@ export const placeService = {
       return place
     }
     return get<Place>(`/places/${encodeURIComponent(id)}`, signal)
+  },
+  async getMapPlaces(
+    bounds: MapBounds,
+    category = '',
+    signal?: AbortSignal,
+  ): Promise<MapPlacesResponse> {
+    if (useMock) {
+      const items = mockPlaces.filter(
+        (place) =>
+          place.latitude !== null &&
+          place.longitude !== null &&
+          place.latitude >= bounds.south &&
+          place.latitude <= bounds.north &&
+          place.longitude >= bounds.west &&
+          place.longitude <= bounds.east &&
+          (!category || place.category === category),
+      )
+      return { items, total: items.length, truncated: false }
+    }
+    const query = new URLSearchParams({
+      south: String(bounds.south),
+      west: String(bounds.west),
+      north: String(bounds.north),
+      east: String(bounds.east),
+    })
+    if (category) query.set('category', category)
+    return get<MapPlacesResponse>(`/places/map?${query}`, signal)
   },
 }

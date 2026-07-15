@@ -22,6 +22,28 @@ export interface PlaceCategoryResponse {
   categories: string[]
 }
 
+export interface MapBounds {
+  south: number
+  west: number
+  north: number
+  east: number
+}
+
+export interface MarkerPlace {
+  id: string
+  name: string
+  category: string
+  address: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+export interface MapPlacesResponse {
+  items: MarkerPlace[]
+  total: number
+  truncated: boolean
+}
+
 export interface PlaceSearchParams {
   keyword?: string
   category?: string
