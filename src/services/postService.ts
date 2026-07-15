@@ -14,10 +14,12 @@ interface ErrorBody {
     status?: number
     details?: FieldError[]
   }
-  detail?: string | Array<{
-    loc?: Array<string | number>
-    msg?: string
-  }>
+  detail?:
+    | string
+    | Array<{
+        loc?: Array<string | number>
+        msg?: string
+      }>
 }
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/+$/, '')
@@ -53,11 +55,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       },
     })
   } catch {
-    throw new ApiError(
-      'NETWORK_ERROR',
-      '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.',
-      0,
-    )
+    throw new ApiError('NETWORK_ERROR', '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.', 0)
   }
 
   if (response.status === 204) return undefined as T

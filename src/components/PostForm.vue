@@ -1,21 +1,29 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
+import ScheduleEditor from '@/components/ScheduleEditor.vue'
+import type { ScheduleItem } from '@/types/posts'
 
 const props = withDefaults(
   defineProps<{
     initialTitle?: string
     initialContent?: string
+    initialSchedule?: ScheduleItem[]
     submitLabel: string
     busy?: boolean
   }>(),
   {
     initialTitle: '',
     initialContent: '',
+    initialSchedule: () => [],
     busy: false,
   },
 )
-const emit = defineEmits<{ submit: [value: { title: string; content: string }]; cancel: [] }>()
+const emit = defineEmits<{
+  submit: [value: { title: string; content: string; schedule: ScheduleItem[] }]
+  cancel: []
+}>()
 const form = reactive({ title: props.initialTitle, content: props.initialContent })
+const schedule = reactive<ScheduleItem[]>(props.initialSchedule.map((item) => ({ ...item })))
 const touched = reactive({ title: false, content: false })
 
 watch(
@@ -24,6 +32,10 @@ watch(
     form.title = title ?? ''
     form.content = content ?? ''
   },
+)
+watch(
+  () => props.initialSchedule,
+  (value) => schedule.splice(0, schedule.length, ...value.map((item) => ({ ...item }))),
 )
 
 const titleError = computed(() => {
@@ -45,7 +57,11 @@ function submit() {
   touched.title = true
   touched.content = true
   if (titleError.value || contentError.value) return
-  emit('submit', { title: form.title.trim(), content: form.content.trim() })
+  emit('submit', {
+    title: form.title.trim(),
+    content: form.content.trim(),
+    schedule: schedule.map((item) => ({ ...item })),
+  })
 }
 </script>
 
@@ -80,6 +96,11 @@ function submit() {
       ></textarea>
       <p v-if="contentError" class="field-error">{{ contentError }}</p>
     </div>
+    <ScheduleEditor
+      :model-value="schedule"
+      :disabled="busy"
+      @update:model-value="schedule.splice(0, schedule.length, ...$event)"
+    />
     <div class="form-actions">
       <button class="button secondary" type="button" :disabled="busy" @click="emit('cancel')">
         취소

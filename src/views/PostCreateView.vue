@@ -5,14 +5,19 @@ import PasswordModal from '@/components/PasswordModal.vue'
 import PostForm from '@/components/PostForm.vue'
 import { postService } from '@/services/postService'
 import { ApiError } from '@/types/posts'
+import type { ScheduleItem } from '@/types/posts'
 
 const router = useRouter()
 const modalOpen = ref(false)
 const busy = ref(false)
 const passwordError = ref('')
-const draft = ref({ title: '', content: '' })
+const draft = ref<{ title: string; content: string; schedule: ScheduleItem[] }>({
+  title: '',
+  content: '',
+  schedule: [],
+})
 const passwordModal = ref<InstanceType<typeof PasswordModal> | null>(null)
-function prepare(value: { title: string; content: string }) {
+function prepare(value: { title: string; content: string; schedule: ScheduleItem[] }) {
   draft.value = value
   modalOpen.value = true
 }

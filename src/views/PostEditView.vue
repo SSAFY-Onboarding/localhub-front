@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PasswordModal from '@/components/PasswordModal.vue'
 import PostForm from '@/components/PostForm.vue'
 import { postService } from '@/services/postService'
-import { ApiError, type PostDetail } from '@/types/posts'
+import { ApiError, type PostDetail, type ScheduleItem } from '@/types/posts'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,7 +14,11 @@ const loadError = ref('')
 const modalOpen = ref(false)
 const busy = ref(false)
 const passwordError = ref('')
-const draft = ref({ title: '', content: '' })
+const draft = ref<{ title: string; content: string; schedule: ScheduleItem[] }>({
+  title: '',
+  content: '',
+  schedule: [],
+})
 const passwordModal = ref<InstanceType<typeof PasswordModal> | null>(null)
 const id = computed(() => Number(route.params.id))
 const fromPage = computed(() => Math.max(1, Number(route.query.fromPage) || 1))
@@ -37,7 +41,7 @@ async function load() {
     loading.value = false
   }
 }
-function prepare(value: { title: string; content: string }) {
+function prepare(value: { title: string; content: string; schedule: ScheduleItem[] }) {
   draft.value = value
   modalOpen.value = true
 }
@@ -85,6 +89,7 @@ onMounted(load)
       <PostForm
         :initial-title="post.title"
         :initial-content="post.content"
+        :initial-schedule="post.schedule ?? []"
         submit-label="수정 완료"
         :busy="busy"
         @submit="prepare"

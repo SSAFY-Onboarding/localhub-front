@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-defineProps<{ title: string; busy?: boolean }>()
+defineProps<{ title: string; busy?: boolean; wide?: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 const panel = ref<HTMLElement | null>(null)
 
@@ -24,7 +24,7 @@ onBeforeUnmount(() => {
   <div class="modal-backdrop" role="presentation" @mousedown.self="!busy && emit('close')">
     <section
       ref="panel"
-      class="modal-panel"
+      :class="['modal-panel', { wide }]"
       role="dialog"
       aria-modal="true"
       :aria-label="title"

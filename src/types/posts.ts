@@ -8,9 +8,20 @@ export interface PostSummary {
 
 export interface PostDetail extends PostSummary {
   content: string
-  like_count: number
-  view_count: number
   updated_at: string | null
+  schedule: ScheduleItem[]
+}
+
+export interface ScheduleItem {
+  day: number
+  order: number
+  place_id: string
+  name: string
+  type: string
+  lat: number | null
+  lng: number | null
+  time: string | null
+  memo: string | null
 }
 
 export interface PostListResponse {
@@ -25,6 +36,7 @@ export interface PostCreateInput {
   title: string
   content: string
   password: string
+  schedule: ScheduleItem[]
 }
 
 export type PostUpdateInput = PostCreateInput

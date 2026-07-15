@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PasswordModal from '@/components/PasswordModal.vue'
+import ScheduleTimeline from '@/components/ScheduleTimeline.vue'
 import { postService } from '@/services/postService'
 import { ApiError, type PostDetail } from '@/types/posts'
 
@@ -102,11 +103,14 @@ onMounted(load)
         <h1>{{ post.title }}</h1>
         <p>
           {{ formatDate(post.created_at)
-          }}<template v-if="post.updated_at && post.updated_at !== post.created_at"> · 수정됨</template>
+          }}<template v-if="post.updated_at && post.updated_at !== post.created_at">
+            · 수정됨</template
+          >
           · 조회 {{ post.view_count.toLocaleString('ko-KR') }}
         </p>
       </header>
       <div class="post-content">{{ post.content }}</div>
+      <ScheduleTimeline :items="post.schedule ?? []" />
       <div class="post-recommend">
         <button class="like-button" type="button" :disabled="liking" @click="likePost">
           <span aria-hidden="true">♥</span>
