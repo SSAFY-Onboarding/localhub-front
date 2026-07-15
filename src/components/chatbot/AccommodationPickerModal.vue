@@ -1,78 +1,52 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BaseModal from '@/components/BaseModal.vue'
 import PlaceThumbnail from '@/components/PlaceThumbnail.vue'
+import { placeService } from '@/services/placeService'
 import type { Place } from '@/types/places'
 
 const emit = defineEmits<{ close: []; select: [place: Place] }>()
-
 const keyword = ref('')
+const accommodations = ref<Place[]>([])
+const page = ref(1)
+const totalPages = ref(0)
+const total = ref(0)
+const loading = ref(false)
+const error = ref('')
+let timer: ReturnType<typeof setTimeout> | undefined
+let controller: AbortController | undefined
 
-const accommodations: Place[] = [
-  {
-    id: '3056929',
-    name: '호텔 안테룸 서울',
-    category: '숙박',
-    address: '서울특별시 강남구 도산대로 153',
-    latitude: 37.5202,
-    longitude: 127.0229,
-    image_url: null,
-    description: '가로수길과 가까운 도심형 호텔',
-    phone: null,
-  },
-  {
-    id: '32-142001',
-    name: '서울신라호텔',
-    category: '숙박',
-    address: '서울특별시 중구 동호로 249',
-    latitude: 37.5565,
-    longitude: 127.0052,
-    image_url: null,
-    description: '남산 인근의 대표적인 도심 호텔',
-    phone: null,
-  },
-  {
-    id: '3056930',
-    name: '도미인 서울 강남',
-    category: '숙박',
-    address: '서울특별시 강남구 봉은사로 134',
-    latitude: 37.5053,
-    longitude: 127.0291,
-    image_url: null,
-    description: '강남역 인근의 비즈니스 호텔',
-    phone: null,
-  },
-  {
-    id: '3056931',
-    name: '롯데호텔 서울',
-    category: '숙박',
-    address: '서울특별시 중구 을지로 30',
-    latitude: 37.5654,
-    longitude: 126.9809,
-    image_url: null,
-    description: '명동과 시청을 편리하게 이동할 수 있는 호텔',
-    phone: null,
-  },
-  {
-    id: '3056932',
-    name: '나인트리 프리미어 호텔 인사동',
-    category: '숙박',
-    address: '서울특별시 종로구 인사동길 49',
-    latitude: 37.5744,
-    longitude: 126.9847,
-    image_url: null,
-    description: '인사동과 북촌 여행에 편리한 호텔',
-    phone: null,
-  },
-]
+async function search() {
+  controller?.abort()
+  controller = new AbortController()
+  loading.value = true
+  error.value = ''
+  try {
+    const result = await placeService.getPlaces(
+      { category: '숙박', keyword: keyword.value, region: '서울', page: page.value, size: 6 },
+      controller.signal,
+    )
+    accommodations.value = result.items
+    totalPages.value = result.total_pages
+    total.value = result.total
+  } catch (cause) {
+    if (!(cause instanceof DOMException && cause.name === 'AbortError'))
+      error.value = '숙소 목록을 불러오지 못했습니다.'
+  } finally {
+    if (!controller.signal.aborted) loading.value = false
+  }
+}
 
-const filteredAccommodations = computed(() => {
-  const searchText = keyword.value.trim().toLocaleLowerCase('ko-KR')
-  if (!searchText) return accommodations
-
-  return accommodations.filter((place) =>
-    `${place.name} ${place.address ?? ''}`.toLocaleLowerCase('ko-KR').includes(searchText),
-  )
+watch(keyword, () => {
+  page.value = 1
+  clearTimeout(timer)
+  timer = setTimeout(search, 300)
+})
+watch(page, search)
+onMounted(search)
+onBeforeUnmount(() => {
+  clearTimeout(timer)
+  controller?.abort()
 })
 </script>
 
@@ -80,12 +54,11 @@ const filteredAccommodations = computed(() => {
   <BaseModal title="기준 숙소 선택" wide @close="emit('close')">
     <div class="accommodation-modal-heading">
       <div>
-        <h2>숙소를 선택해주세요</h2>
-        <p>선택한 숙소를 기준으로 주변 여행지를 추천합니다.</p>
+        <h2>숙소를 선택해 주세요</h2>
+        <p>선택한 숙소의 좌표를 기준으로 가까운 여행지를 추천합니다.</p>
       </div>
-      <span class="mock-badge">UI MOCK</span>
+      <span v-if="placeService.isMock" class="mock-badge">MOCK DATA</span>
     </div>
-
     <label class="sr-only" for="accommodation-keyword">숙소 검색</label>
     <div class="search-box">
       <span aria-hidden="true">⌕</span>
@@ -93,13 +66,24 @@ const filteredAccommodations = computed(() => {
         id="accommodation-keyword"
         v-model="keyword"
         type="search"
+        maxlength="100"
         placeholder="숙소명 또는 주소 검색"
         autofocus
       />
     </div>
-
-    <ul v-if="filteredAccommodations.length" class="accommodation-results">
-      <li v-for="place in filteredAccommodations" :key="place.id">
+    <p v-if="!loading && !error" class="result-summary">
+      검색 결과 {{ total.toLocaleString('ko-KR') }}개
+    </p>
+    <div v-if="loading" class="accommodation-state">
+      <span class="spinner"></span>
+      <p>숙소를 찾고 있습니다.</p>
+    </div>
+    <div v-else-if="error" class="accommodation-state">
+      <p class="field-error">{{ error }}</p>
+      <button class="button secondary" type="button" @click="search">다시 시도</button>
+    </div>
+    <ul v-else-if="accommodations.length" class="accommodation-results">
+      <li v-for="place in accommodations" :key="place.id">
         <PlaceThumbnail
           :src="place.image_url"
           :name="place.name"
@@ -107,19 +91,31 @@ const filteredAccommodations = computed(() => {
           size="picker"
         />
         <div class="result-copy">
-          <span>{{ place.category }}</span>
-          <strong>{{ place.name }}</strong>
-          <p>{{ place.address }}</p>
+          <span>{{ place.category }}</span
+          ><strong>{{ place.name }}</strong>
+          <p>{{ place.address ?? '주소 정보 없음' }}</p>
+          <small v-if="place.latitude === null || place.longitude === null"
+            >좌표 정보가 없어 선택할 수 없습니다.</small
+          >
         </div>
-        <button class="button primary" type="button" @click="emit('select', place)">
+        <button
+          class="button primary"
+          type="button"
+          :disabled="place.latitude === null || place.longitude === null"
+          @click="emit('select', place)"
+        >
           선택
         </button>
       </li>
     </ul>
-
     <div v-else class="empty-state">
       <strong>검색 결과가 없습니다.</strong>
-      <p>다른 숙소명이나 주소를 입력해보세요.</p>
+      <p>다른 숙소명이나 주소를 입력해 보세요.</p>
+    </div>
+    <div v-if="totalPages > 1" class="place-pagination">
+      <button type="button" :disabled="page <= 1" @click="page--">이전</button>
+      <span>{{ page }} / {{ totalPages }}</span>
+      <button type="button" :disabled="page >= totalPages" @click="page++">다음</button>
     </div>
   </BaseModal>
 </template>
@@ -158,7 +154,6 @@ const filteredAccommodations = computed(() => {
   border: 1px solid #d7ddd9;
   border-radius: 10px;
   background: #fff;
-  margin-bottom: 18px;
 }
 .search-box:focus-within {
   border-color: var(--green);
@@ -170,6 +165,11 @@ const filteredAccommodations = computed(() => {
   outline: 0;
   font: inherit;
   background: transparent;
+}
+.result-summary {
+  margin: 10px 2px;
+  color: #74807b;
+  font-size: 12px;
 }
 .accommodation-results {
   display: grid;
@@ -202,28 +202,35 @@ const filteredAccommodations = computed(() => {
   font-size: 15px;
 }
 .result-copy p {
+  overflow: hidden;
   color: #74807b;
   font-size: 12px;
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.result-copy small {
+  display: block;
+  margin-top: 5px;
+  color: var(--danger);
+  font-size: 11px;
+}
+.accommodation-state,
 .empty-state {
-  padding: 60px 20px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 210px;
+  padding: 30px;
   text-align: center;
   border-radius: 12px;
   background: #f7f8f6;
-}
-.empty-state strong {
-  display: block;
-  margin-bottom: 7px;
 }
 @media (max-width: 640px) {
   .accommodation-results li {
     grid-template-columns: auto minmax(0, 1fr);
   }
   .accommodation-results .button {
-    grid-column: 1 / -1;
+    grid-column: 1/-1;
     width: 100%;
   }
 }
