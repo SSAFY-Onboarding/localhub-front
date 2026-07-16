@@ -759,8 +759,10 @@ onBeforeUnmount(() => requestController?.abort())
     max-height: 52vh;
     min-height: 260px;
   }
-  .map-panel {
+  .is-started .map-panel {
     height: 520px;
+    min-height: 520px;
+    flex: 0 0 520px;
   }
   .accommodation-card {
     grid-template-columns: auto minmax(0, 1fr);
