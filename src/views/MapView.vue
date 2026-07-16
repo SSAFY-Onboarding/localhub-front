@@ -2,7 +2,13 @@
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
-import L, { type Map as LeafletMap, type Marker, type MarkerCluster, type MarkerClusterGroup, type Popup } from 'leaflet'
+import L, {
+  type Map as LeafletMap,
+  type Marker,
+  type MarkerCluster,
+  type MarkerClusterGroup,
+  type Popup,
+} from 'leaflet'
 import 'leaflet.markercluster'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -127,7 +133,14 @@ async function selectPlace(place: MarkerPlace, moveMap = true) {
   selectedPlace.value = place
   updateMarkerSelection()
   const marker = markers.find((item) => item.placeId === place.id)
-  if (moveMap && map && clusterGroup && marker && place.latitude !== null && place.longitude !== null) {
+  if (
+    moveMap &&
+    map &&
+    clusterGroup &&
+    marker &&
+    place.latitude !== null &&
+    place.longitude !== null
+  ) {
     // zoomToShowLayer pans/zooms until the marker is out of any cluster, then opens its popup
     clusterGroup.zoomToShowLayer(marker, () => openPlacePopup(place))
   } else {
@@ -532,7 +545,7 @@ onBeforeUnmount(() => {
                   />
                   <span
                     class="map-list-marker"
-                    :style="{ backgroundColor: categoryColors[place.category] ?? '#114b3b' }"
+                    :style="{ backgroundColor: categoryColors[place.category] ?? '#3659d9' }"
                     aria-hidden="true"
                   >
                     <PlaceCategoryIcon :category="place.category" /></span

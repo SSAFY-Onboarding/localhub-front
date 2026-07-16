@@ -1,11 +1,11 @@
 export const categoryColors: Record<string, string> = {
-  관광지: '#c65f42',
-  문화시설: '#765c9f',
-  축제공연행사: '#d98b2b',
-  여행코스: '#287d65',
-  레포츠: '#3377a8',
-  숙박: '#805843',
-  쇼핑: '#b04f77',
+  관광지: '#3f6ee8',
+  문화시설: '#7358d8',
+  축제공연행사: '#a94fc4',
+  여행코스: '#168fa8',
+  레포츠: '#277fc4',
+  숙박: '#52669f',
+  쇼핑: '#a84f91',
 }
 
 const categoryIconPaths: Record<string, string> = {
@@ -25,7 +25,7 @@ const fallbackIconPath =
   'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z'
 
 export function categoryColor(category: string) {
-  return categoryColors[category] ?? '#114b3b'
+  return categoryColors[category] ?? '#3659d9'
 }
 
 export function categoryIconPath(category: string) {

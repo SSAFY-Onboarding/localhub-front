@@ -194,14 +194,14 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.chatbot-map{width:100%;height:100%;min-height:560px;background:#e9efec}
+.chatbot-map{width:100%;height:100%;min-height:560px;background:#e7edfa}
 :global(.chat-map-marker-shell){background:transparent;border:0}
-:global(.chat-map-marker){display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#d66b45;color:#fff;border:3px solid #fff;box-shadow:0 5px 14px rgba(0,0,0,.25);font-weight:900}
-:global(.chat-map-marker.hotel){background:#114b3b}
+:global(.chat-map-marker){display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(145deg,#526fe0,#20a4c1);color:#fff;border:3px solid #fff;box-shadow:0 7px 18px rgba(37,62,143,.38);font-weight:900}
+:global(.chat-map-marker.hotel){background:linear-gradient(145deg,#233d9b,#655bd7)}
 :global(.chat-place-popup){min-width:230px}
 :global(.chat-popup-image){display:block;width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:10px}
-:global(.chat-place-popup span){font-size:11px;color:#2d725e;font-weight:800}
+:global(.chat-place-popup span){font-size:11px;color:#3659d9;font-weight:800}
 :global(.chat-place-popup h3){margin:4px 0 8px;font-size:16px}
-:global(.chat-place-popup p){margin:5px 0;line-height:1.45;color:#59665f;font-size:12px}
+:global(.chat-place-popup p){margin:5px 0;line-height:1.45;color:#65728e;font-size:12px}
 @media(max-width:820px){.chatbot-map{min-height:420px}}
 </style>

@@ -1,16 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --green: #114b3b;
-  --green-dark: #0a362c;
-  --mint: #dcebe3;
-  --cream: #f7f4ed;
-  --paper: #fffdf8;
-  --ink: #17231f;
-  --muted: #69736f;
-  --line: #dedfd9;
-  --orange: #e86f3a;
-  --danger: #bc3c35;
+  --green: #3659d9;
+  --green-dark: #1d348e;
+  --mint: #e5edff;
+  --cream: #eef4ff;
+  --paper: #f8faff;
+  --ink: #101b38;
+  --muted: #65728e;
+  --line: #d8e1f1;
+  --orange: #159fbd;
+  --danger: #d34f72;
+  --primary-soft: #edf1ff;
+  --cyan-soft: #e5f8fc;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-strong: #ffffff;
+  --shadow-soft: 0 18px 48px rgba(36, 62, 128, 0.1);
+  --shadow-hover: 0 24px 60px rgba(38, 68, 150, 0.17);
+  --gradient-primary: linear-gradient(135deg, #3157d5 0%, #5174e8 52%, #23a9c4 100%);
+  --gradient-deep: linear-gradient(135deg, #142a6b 0%, #263f9b 55%, #146e8d 100%);
 }
 * {
   box-sizing: border-box;
@@ -23,11 +31,20 @@ body {
   min-width: 320px;
   min-height: 100vh;
   color: var(--ink);
-  background: var(--paper);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(91, 126, 232, 0.12), transparent 28rem),
+    radial-gradient(circle at 92% 24%, rgba(35, 169, 196, 0.1), transparent 24rem), var(--paper);
   font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+::selection {
+  color: #fff;
+  background: #5273dc;
+}
+:focus-visible {
+  outline-color: #5273dc;
 }
 button,
 input,

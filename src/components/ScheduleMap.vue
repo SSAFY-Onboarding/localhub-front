@@ -14,7 +14,7 @@ const validItems = computed(() =>
     .filter((item) => item.lat !== null && item.lng !== null)
     .sort((a, b) => a.day - b.day || a.order - b.order),
 )
-const dayColors = ['#c65f42', '#3377a8', '#765c9f', '#287d65', '#d98b2b', '#b04f77', '#805843']
+const dayColors = ['#3f6ee8', '#168fa8', '#7358d8', '#277fc4', '#a94fc4', '#52669f', '#a84f91']
 let map: LeafletMap | null = null
 let layers: LayerGroup | null = null
 let lastCoordinateKey = ''
