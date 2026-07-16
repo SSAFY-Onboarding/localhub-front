@@ -2,13 +2,13 @@
 
 > **범위**: 관광 JSON 7종 로딩 → 유형 필터 → 키워드·지역 검색 → 상세 조회 (BE2 담당)
 > **연동 코드**: `app/schemas/place.py`, `app/services/data_loader.py`, `app/services/place_service.py`, `app/api/places.py`
-> **상태**: 구현 완료 (pytest 8건 통과, 로컬 Swagger 확인) — `게시판 REST API 명세 초안`과 동일 규약 사용
+> **상태**: 현재 백엔드 `master` 구현 기준 As-Is 명세
 
 ---
 
 ## 1. 공통 규약
 
-게시판 API(`REST_API_명세_초안_게시판.md`)와 동일한 규약을 그대로 따른다.
+공통 응답과 오류 규약은 [`REST_API_명세_게시판_최종.md`](./REST_API_명세_게시판_최종.md)와 동일한 기준을 사용한다.
 
 | 항목 | 값 |
 |---|---|
@@ -44,9 +44,10 @@
 |---|---|---|---|---|
 | 1 | 장소 목록 조회(필터/검색) | GET | `/api/places` | 200 |
 | 2 | 관광 유형 목록 조회 | GET | `/api/places/categories` | 200 |
-| 3 | 장소 상세 조회 | GET | `/api/places/{place_id}` | 200 |
+| 3 | 지도 영역 장소 조회 | GET | `/api/places/map` | 200 |
+| 4 | 장소 상세 조회 | GET | `/api/places/{place_id}` | 200 |
 
-> 라우팅 순서 주의: `/categories`는 `/{place_id}`보다 먼저 등록돼 있어 `place_id`로 오인식되지 않는다.
+> 라우팅 순서 주의: `/categories`와 `/map`은 `/{place_id}`보다 먼저 등록돼 있어 `place_id`로 오인식되지 않는다.
 
 ---
 
@@ -104,7 +105,54 @@ GET /api/places/categories
 
 ---
 
-### 3.3 장소 상세 조회
+### 3.3 지도 영역 장소 조회
+
+```http
+GET /api/places/map?south=37.4&west=126.7&north=37.7&east=127.2&category=관광지&keyword=한강
+```
+
+| Query | 타입 | 필수 | 설명 |
+| --- | --- | :---: | --- |
+| `south` | number | O | 지도 남쪽 위도 |
+| `west` | number | O | 지도 서쪽 경도 |
+| `north` | number | O | 지도 북쪽 위도 |
+| `east` | number | O | 지도 동쪽 경도 |
+| `category` | string | X | 단일 관광 유형 필터 |
+| `keyword` | string | X | 이름·주소 부분 검색, 최대 100자 |
+
+좌표가 없는 장소는 제외한다. 영역, 카테고리, 키워드를 모두 적용한 다음 전체 일치 수를 계산하고, 응답 항목은 최대 1,000개로 제한한다. 따라서 키워드 결과가 1,000개 제한 뒤에 잘려 누락되는 방식이 아니다.
+
+**200 OK**
+
+```json
+{
+  "items": [
+    {
+      "id": "12-1059877",
+      "name": "양화한강공원",
+      "category": "관광지",
+      "address": "서울특별시 영등포구 노들로 221 (당산동)",
+      "latitude": 37.5382819489,
+      "longitude": 126.902365881,
+      "image_url": "https://tong.visitkorea.or.kr/example.jpg"
+    }
+  ],
+  "total": 1,
+  "truncated": false
+}
+```
+
+| 필드 | 설명 |
+| --- | --- |
+| `items` | 지도 마커용 경량 장소 목록. 상세 설명과 전화번호는 포함하지 않음 |
+| `total` | 잘라내기 전 전체 일치 장소 수 |
+| `truncated` | 전체 일치 수가 1,000개를 초과했는지 여부 |
+
+현재는 `south <= north`, `west <= east` 관계를 별도 오류로 검증하지 않는다. 뒤집힌 범위는 자연스럽게 빈 결과를 반환한다.
+
+---
+
+### 3.4 장소 상세 조회
 ```
 GET /api/places/{place_id}
 ```
@@ -143,6 +191,8 @@ class PlaceResponse(BaseModel):
     description: str | None
     phone: str | None
 ```
+
+지도 API는 위 모델에서 `description`과 `phone`을 제외한 `MarkerPlace`를 사용하며, `MapPlacesResponse`가 `items`, `total`, `truncated`를 감싼다.
 
 ### 4.2 `contentTypeId` → `category` 매핑
 | contentTypeId | category |
@@ -196,10 +246,12 @@ search_places(
 | 내부 레코드(region 포함) | `PlaceRecord` | 〃 |
 | 목록 응답 | `PlaceListResponse` | 〃 |
 | 카테고리 응답 | `CategoryListResponse` | 〃 |
+| 지도 마커 | `MarkerPlace` | 〃 |
+| 지도 영역 응답 | `MapPlacesResponse` | 〃 |
 | 404 예외 | `PlaceNotFound` | `app/core/exceptions.py` |
 | 라우터 | `router` | `app/api/places.py` |
 | 로딩/정규화 | `load_all_places`, `get_places` | `app/services/data_loader.py` |
-| 필터/검색/페이지네이션 | `list_places`, `get_categories`, `get_place`, `search_places` | `app/services/place_service.py` |
+| 필터/검색/페이지네이션 | `list_places`, `get_categories`, `get_place`, `search_places`, `get_places_in_bounds` | `app/services/place_service.py` |
 
 ---
 
